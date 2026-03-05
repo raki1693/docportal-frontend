@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Dashboard — DocPortal</title>
+    <meta name="description" content="DocPortal User Dashboard - View shared documents." />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/chat.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+
+<body>
+
+    <!-- Session Expired Screen (initially hidden) -->
+    <div id="expired-screen" style="display:none;">
+        <div class="session-expired-screen">
+            <div class="icon">⏰</div>
+            <h2>Session Expired</h2>
+            <p>Your dashboard access time has ended. Please contact the admin to get a new session.</p>
+            <button class="btn btn-primary" style="width:auto; min-width:160px;" onclick="handleLogout()">
+                🚪 Return to Login
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard" id="main-dashboard">
+        <!-- Hamburger Button (mobile/tablet) -->
+        <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <!-- Sidebar Backdrop Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">📂</div>
+                <span>DocPortal</span>
+            </div>
+            <nav class="sidebar-nav">
+                <span class="nav-section-title">My Portal</span>
+                <button class="nav-item active" id="nav-dashboard" onclick="navigate('dashboard')">
+                    <span class="nav-icon">🏠</span> Dashboard
+                </button>
+                <button class="nav-item" id="nav-images" onclick="navigate('images')">
+                    <span class="nav-icon">🖼️</span> Images
+                </button>
+                <button class="nav-item" id="nav-pdfs" onclick="navigate('pdfs')">
+                    <span class="nav-icon">📄</span> PDFs
+                </button>
+                <button class="nav-item" id="nav-docs" onclick="navigate('docs')">
+                    <span class="nav-icon">📝</span> Documents
+                </button>
+                <div style="margin: 1rem 0; border-top: 1px solid rgba(255,255,255,0.05);"></div>
+                <span class="nav-section-title">Special Access</span>
+                <button class="nav-item" id="nav-kitsg" onclick="navigate('kitsg')">
+                    <span class="nav-icon">📦</span> KITS G
+                </button>
+                <button class="nav-item" id="nav-kitsa" onclick="navigate('kitsa')">
+                    <span class="nav-icon">📦</span> KITS A
+                </button>
+                <div style="margin: 1rem 0; border-top: 1px solid rgba(255,255,255,0.05);"></div>
+                <span class="nav-section-title">Support</span>
+                <button class="nav-item" id="nav-chat" onclick="navigate('chat')">
+                    <span class="nav-icon">💬</span> Admin Chat
+                    <span id="user-chat-badge" class="chat-badge" style="display:none;">0</span>
+                </button>
+            </nav>
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <div class="user-info-text">
+                        <p id="user-name">User</p>
+                        <span class="role-badge user">👤 User</span>
+                    </div>
+                </div>
+                <button class="nav-item" onclick="handleLogout()"
+                    style="width:100%;justify-content:flex-start;margin-top:0.25rem;background:rgba(239,68,68,0.1);color:#f87171;">
+                    <span class="nav-icon">🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Session Timer Bar -->
+            <div class="session-timer-bar" id="session-timer-bar" style="display:none;">
+                <div class="timer-icon">⏱️</div>
+                <div class="timer-text">
+                    <p>Session Time Remaining</p>
+                    <div class="timer-countdown" id="timer-display">—</div>
+                </div>
+                <div>
+                    <div class="timer-progress" style="width:180px;">
+                        <div class="timer-progress-bar" id="timer-progress-bar" style="width:100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD SECTION -->
+            <div class="section active" id="section-dashboard">
+                <div class="page-header">
+                    <h2 id="welcome-heading">👋 Welcome!</h2>
+                    <p>Browse documents shared by the admin</p>
+                </div>
+
+                <!-- File type quick stats -->
+                <div class="stats-grid" id="user-stats-grid" style="margin-bottom:2rem;"></div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📁 All Files</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">🔄 Refresh</button>
+                    </div>
+                    <div class="files-grid" id="all-files-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IMAGES SECTION -->
+            <div class="section" id="section-images">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>🖼️ Images</h2>
+                        <p>All shared images</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="files-grid" id="images-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PDFS SECTION -->
+            <div class="section" id="section-pdfs">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>📄 PDF Documents</h2>
+                        <p>All shared PDF files</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="files-grid" id="pdfs-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCS SECTION -->
+            <div class="section" id="section-docs">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>📝 Word Documents</h2>
+                        <p>All shared Word files</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="files-grid" id="docs-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KITS G SECTION -->
+            <div class="section" id="section-kitsg">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>📦 KITS G</h2>
+                        <p>Access your KITS G documents and resources</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="files-grid" id="kitsg-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KITS A SECTION -->
+            <div class="section" id="section-kitsa">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>📦 KITS A</h2>
+                        <p>Access your KITS A documents and resources</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="files-grid" id="kitsa-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHAT SECTION -->
+            <div class="section" id="section-chat">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>💬 Messages</h2>
+                        <p>Chat with admin or find friends by Chat ID</p>
+                    </div>
+                </div>
+
+                <!-- My Chat ID card -->
+                <div
+                    style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:12px;padding:12px 18px;margin-bottom:1rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span style="font-size:1.3rem;">🪪</span>
+                    <div style="flex:1;">
+                        <div
+                            style="font-size:0.75rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">
+                            Your Chat ID</div>
+                        <div id="my-chat-id-display"
+                            style="font-family:'Outfit',monospace;font-size:1.4rem;font-weight:700;letter-spacing:.18em;color:#a5b4fc;">
+                            ––––––––––</div>
+                    </div>
+                    <button onclick="copyMyChatId()"
+                        style="background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:0.8rem;font-weight:600;">📋
+                        Copy</button>
+                </div>
+
+                <!-- Search bar to find a user -->
+                <div style="display:flex;gap:10px;margin-bottom:1rem;">
+                    <input type="number" id="peer-search-input" class="chat-input"
+                        placeholder="Enter 10-digit Chat ID to start a chat…"
+                        style="border-radius:12px;max-width:400px;" oninput="this.value=this.value.slice(0,10)"
+                        onkeydown="if(event.key==='Enter') searchPeerUser()" />
+                    <button onclick="searchPeerUser()" class="btn btn-primary"
+                        style="width:auto;padding:0 1.5rem;">Find</button>
+                </div>
+
+                <!-- Search result -->
+                <div id="peer-search-result" style="display:none;margin-bottom:1rem;"></div>
+
+                <!-- Chat container: conversation list + window -->
+                <div class="chat-container-main" style="height: calc(100vh - 340px);">
+                    <!-- Left: conversation list -->
+                    <div class="chat-sidebar-users">
+                        <div class="chat-panel-header"
+                            style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>💬 Conversations</span>
+                            <button onclick="toggleGroupModal(true)"
+                                style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:1.2rem; padding:0 5px;"
+                                title="Create Group">+</button>
+                        </div>
+                        <div id="user-convo-list" style="flex: 1; overflow-y: auto;">
+                            <div class="chat-no-users"
+                                style="padding:2rem;text-align:center;color:var(--text-muted);font-size:0.85rem;">
+                                No conversations yet.<br>Find a user above to start chatting.
+                            </div>
+                        </div>
+                        <div class="chat-sidebar-footer"
+                            style="padding: 10px; border-top: 1px solid var(--bg-glass-border); background: rgba(255,255,255,0.02);">
+                            <button id="delete-chat-btn" class="btn btn-ghost btn-sm"
+                                style="width: 100%; color: #f87171; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;"
+                                onclick="toggleDeleteChatMode()">
+                                🗑️ Delete Chat
+                            </button>
+                            <button id="cancel-delete-chat-btn" class="btn btn-ghost btn-sm"
+                                style="width: 100%; color: var(--text-muted); display: none; align-items: center; justify-content: center; gap: 8px; font-size: 13px;"
+                                onclick="toggleDeleteChatMode()">
+                                ✕ Cancel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: chat window -->
+                    <div class="chat-window">
+                        <!-- Empty state -->
+                        <div class="chat-empty-state" id="peer-empty-state">
+                            <div style="font-size:3rem;">💬</div>
+                            <p>Select a conversation or find a user to start chatting</p>
+                        </div>
+
+                        <!-- Active conversation -->
+                        <div class="chat-conversation" id="peer-conversation" style="display:none;">
+                            <div class="chat-convo-header">
+                                <div class="chat-convo-avatar" id="peer-avatar">U</div>
+                                <div>
+                                    <div class="chat-convo-name" id="peer-convo-name">User</div>
+                                    <div class="chat-convo-status" id="peer-convo-status">Chat ID: ––––––––––</div>
+                                </div>
+                                <!-- Screen Share Button -->
+                                <button id="screen-share-btn" onclick="startScreenShare()"
+                                    title="Share your screen with admin" style="margin-left:auto;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);
+                                    color:#a5b4fc;padding:7px 14px;border-radius:20px;cursor:pointer;
+                                    font-size:0.8rem;font-weight:600;display:flex;align-items:center;gap:6px;">
+                                    🖥️ Share Screen
+                                </button>
+                            </div>
+                            <div class="chat-messages" id="peer-chat-messages" style="flex:1;overflow-y:auto;"></div>
+                            <div id="peer-typing-indicator" class="chat-typing-indicator"
+                                style="margin:0 1.25rem 10px;">
+                                <div class="chat-typing-dots"><span></span><span></span><span></span></div>
+                            </div>
+                            <div id="peer-reply-preview" class="chat-reply-preview" style="display:none;">
+                                <div class="chat-reply-preview-content">
+                                    <div class="chat-reply-preview-name" id="peer-reply-name">Name</div>
+                                    <div class="chat-reply-preview-text" id="peer-reply-text">text…</div>
+                                </div>
+                                <button class="chat-reply-preview-close" onclick="peerCancelReply()">✕</button>
+                            </div>
+                            <!-- File preview bar -->
+                            <div id="peer-file-preview-bar" class="chat-file-preview-bar">
+                                <div id="peer-file-preview-thumb" class="chat-file-preview-thumb"></div>
+                                <div class="chat-file-preview-info">
+                                    <div class="chat-file-preview-name" id="peer-file-preview-name">filename</div>
+                                    <div class="chat-file-preview-size" id="peer-file-preview-size">0 KB</div>
+                                </div>
+                                <button class="chat-file-preview-cancel" onclick="peerCancelFile()">✕</button>
+                            </div>
+                            <div class="chat-uploading-indicator" id="peer-uploading-indicator">
+                                <div class="chat-uploading-dot"></div> Uploading…
+                            </div>
+                            <div class="chat-input-bar">
+                                <input type="file" id="peer-file-input" style="display:none;"
+                                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.webm"
+                                    onchange="peerHandleFileSelect(this)" />
+                                <button class="chat-attach-btn"
+                                    onclick="document.getElementById('peer-file-input').click()"
+                                    title="Attach file">+</button>
+                                <input type="text" id="peer-chat-input" class="chat-input" placeholder="Type a message…"
+                                    oninput="handlePeerTyping()"
+                                    onkeydown="if(event.key==='Enter') peerSendMessage()" />
+                                <button class="chat-voice-btn" id="peer-voice-btn" onclick="toggleVoiceRecording()"
+                                    title="Record voice note">🎤</button>
+                                <button class="chat-send-btn" onclick="peerSendMessage()">➤</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    </div>
+
+    <!-- Screen Share Active Indicator (shown while sharing) -->
+    <div id="screen-share-indicator" style="
+        display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+        background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff;
+        padding:12px 24px; border-radius:50px; font-size:0.9rem; font-weight:700;
+        box-shadow:0 8px 32px rgba(239,68,68,0.5); z-index:9999;
+        display:none; align-items:center; gap:12px; animation:pulse 2s infinite;">
+        <span
+            style="width:10px;height:10px;background:#fff;border-radius:50%;display:inline-block;animation:pulse 1s infinite;"></span>
+        🖥️ Screen Sharing Active
+        <button onclick="stopScreenShare()" style="
+            background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.4);
+            color:#fff; padding:4px 14px; border-radius:20px; cursor:pointer;
+            font-size:0.8rem; font-weight:600;">Stop</button>
+    </div>
+
+    <!-- File Preview Modal -->
+    <div class="modal-overlay" id="preview-modal" style="display:none;">
+        <div class="modal preview-modal">
+            <div class="card-header" style="margin-bottom:1rem;">
+                <h3 id="preview-title" class="card-title">Preview</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closePreview()">✕ Close</button>
+            </div>
+            <div id="preview-content"></div>
+        </div>
+    </div>
+
+    <script src="https://docportal-backend.onrender.com/socket.io/socket.io.js"></script>
+    <script src="../js/utils.js"></script>
+    <script>
+        // Auth guard
+        if (!Auth.isLoggedIn()) {
+            window.location.href = '../index.html';
+        }
+        const userData = Auth.getUser();
+        if (userData && userData.role === 'admin') {
+            window.location.href = 'admin.html';
+        }
+
+        // Set user info
+        if (userData) {
+            document.getElementById('user-name').textContent = userData.name;
+            document.getElementById('user-avatar').textContent = userData.name.charAt(0).toUpperCase();
+            document.getElementById('welcome-heading').textContent = `👋 Welcome, ${userData.name}!`;
+        }
+
+        let allFiles = [];
+        let sessionCheckInterval = null;
+        let timerInterval = null;
+        let sessionStartMs = null;
+        let sessionTotalMs = null;
+        let sessionExpiresAt = null;
+
+        // ========================
+        // SESSION MANAGEMENT
+        // ========================
+        function startSessionMonitoring(expiresAt) {
+            // Clear existing interval if it's already running
+            if (timerInterval) clearInterval(timerInterval);
+
+            if (!expiresAt) {
+                document.getElementById('session-timer-bar').style.display = 'none';
+                sessionExpiresAt = null;
+                timerInterval = null;
+                return;
+            }
+
+            sessionExpiresAt = new Date(expiresAt);
+            const now = new Date();
+            sessionTotalMs = sessionExpiresAt - now;
+
+            if (sessionTotalMs <= 0) {
+                showExpiredScreen();
+                return;
+            }
+
+            // Show timer bar
+            document.getElementById('session-timer-bar').style.display = 'flex';
+
+            // Update display every second
+            timerInterval = setInterval(() => {
+                const remaining = sessionExpiresAt - new Date();
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    showExpiredScreen();
+                    return;
+                }
+                updateTimerDisplay(remaining);
+            }, 1000);
+
+            // Initial display
+            updateTimerDisplay(sessionTotalMs);
+        }
+
+        function updateTimerDisplay(remainingMs) {
+            const display = document.getElementById('timer-display');
+            const progressBar = document.getElementById('timer-progress-bar');
+
+            const text = formatTimeRemaining(remainingMs);
+            display.textContent = text;
+
+            // Color coding (assuming a reasonable total time if we don't have the original duration)
+            const durationMinutes = Auth.getUser()?.sessionDuration || 30;
+            const totalMs = durationMinutes * 60 * 1000;
+            const pct = (remainingMs / totalMs) * 100;
+
+            if (pct <= 10 || remainingMs < 60000) {
+                display.className = 'timer-countdown danger';
+                progressBar.className = 'timer-progress-bar danger';
+            } else if (pct <= 25 || remainingMs < 300000) {
+                display.className = 'timer-countdown warning';
+                progressBar.className = 'timer-progress-bar warning';
+            } else {
+                display.className = 'timer-countdown';
+                progressBar.className = 'timer-progress-bar';
+            }
+
+            progressBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        }
+
+        function showExpiredScreen() {
+            if (timerInterval) clearInterval(timerInterval);
+            if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+            document.getElementById('main-dashboard').style.display = 'none';
+            document.getElementById('expired-screen').style.display = 'flex';
+            document.getElementById('expired-screen').style.flexDirection = 'column';
+            document.getElementById('expired-screen').style.minHeight = '100vh';
+        }
+
+        // Poll server every 5 seconds to check session validity and timer updates
+        function startSessionPolling() {
+            if (sessionCheckInterval) clearInterval(sessionCheckInterval);
+
+            sessionCheckInterval = setInterval(async () => {
+                try {
+                    const data = await apiRequest('/user/session-check');
+
+                    // 1. If session is no longer valid (revoked or expired)
+                    if (!data.valid) {
+                        return showExpiredScreen();
+                    }
+
+                    // 2. Sync timer state
+                    const serverExpiresAt = data.expiresAt ? new Date(data.expiresAt).getTime() : null;
+                    const localExpiresAt = sessionExpiresAt ? sessionExpiresAt.getTime() : null;
+
+                    // If the timer state has changed (new timer, changed time, or removed timer)
+                    if (serverExpiresAt !== localExpiresAt) {
+                        console.log('🔄 Session timer synced with server');
+                        startSessionMonitoring(data.expiresAt);
+                    }
+
+                    // 3. Update local user data if duration changed
+                    if (data.user && data.user.sessionDuration !== Auth.getUser()?.sessionDuration) {
+                        const current = Auth.getUser();
+                        current.sessionDuration = data.user.sessionDuration;
+                        Auth.setUser(current);
+                    }
+
+                } catch (err) {
+                    if (err.status === 403 || err.status === 401) {
+                        showExpiredScreen();
+                    }
+                }
+            }, 5000); // Poll every 5 seconds for real-time response
+        }
+
+        // ========================
+        // DASHBOARD LOAD
+        // ========================
+        async function loadDashboard() {
+            try {
+                const data = await apiRequest('/user/dashboard');
+                allFiles = data.files;
+
+                // Start session timer if applicable
+                if (data.sessionInfo && data.sessionInfo.expiresAt && !timerInterval) {
+                    startSessionMonitoring(data.sessionInfo.expiresAt);
+                }
+
+                // Render stats
+                const images = allFiles.filter(f => f.fileType === 'image');
+                const pdfs = allFiles.filter(f => f.fileType === 'pdf');
+                const docs = allFiles.filter(f => f.fileType === 'word');
+                const others = allFiles.filter(f => f.fileType === 'other');
+
+                document.getElementById('user-stats-grid').innerHTML = `
+          <div class="stat-card" onclick="navigate('images')" style="cursor:pointer;">
+            <div class="stat-icon teal">🖼️</div>
+            <div class="stat-info"><p>Images</p><h3>${images.length}</h3></div>
+          </div>
+          <div class="stat-card" onclick="navigate('pdfs')" style="cursor:pointer;">
+            <div class="stat-icon red">📄</div>
+            <div class="stat-info"><p>PDFs</p><h3>${pdfs.length}</h3></div>
+          </div>
+          <div class="stat-card" onclick="navigate('docs')" style="cursor:pointer;">
+            <div class="stat-icon purple">📝</div>
+            <div class="stat-info"><p>Documents</p><h3>${docs.length}</h3></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">📁</div>
+            <div class="stat-info"><p>Total Files</p><h3>${allFiles.length}</h3></div>
+          </div>`;
+
+                renderFilesGrid('all-files-grid', allFiles);
+            } catch (err) {
+                if (err.code === 'SESSION_EXPIRED' || err.code === 'ACCESS_NOT_GRANTED') {
+                    showExpiredScreen();
+                } else {
+                    Toast.error('Failed to load dashboard');
+                }
+            }
+        }
+
+        function renderFilesGrid(gridId, files) {
+            const grid = document.getElementById(gridId);
+            if (!files || files.length === 0) {
+                grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">📭</div><p>No files available yet.</p></div>';
+                return;
+            }
+            grid.innerHTML = files.map(f => {
+                const icon = getFileIcon(f.fileType, f.mimetype);
+
+                // Determine visual part
+                let visual = '';
+                if (f.fileType === 'image') {
+                    visual = `<img src="${UPLOADS_BASE}/${f.filename}" class="file-card-thumb" alt="${f.title}" />`;
+                } else if (f.fileType === 'pdf') {
+                    visual = `
+                      <div class="file-card-thumb" style="display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);">
+                        <div style="text-align:center;">
+                            <span style="font-size:3rem;">📄</span>
+                            <div style="font-size:0.75rem;font-weight:700;color:#f87171;margin-top:0.25rem;">PDF DOCUMENT</div>
+                        </div>
+                      </div>`;
+                } else {
+                    visual = `<span class="file-card-icon">${icon}</span>`;
+                }
+
+                return `
+          <div class="file-card" onclick="previewFile('${f._id}')">
+            ${visual}
+            <div class="file-card-name" title="${f.title}">${f.title}</div>
+            <div class="file-card-meta" style="font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">
+                👤 ${f.uploadedBy ? f.uploadedBy.name : 'Admin'}
+            </div>
+            <div class="file-card-meta">${formatSize(f.size)} &nbsp;·&nbsp; ${formatDate(f.uploadedAt)}</div>
+            <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
+                <span class="file-type-badge ${f.fileType}">${f.fileType}</span>
+                <span class="file-type-badge" style="background:rgba(255,255,255,0.06); color:var(--text-muted); border:1px solid rgba(255,255,255,0.08); font-size:0.65rem;">
+                    ${f.category === 'general' ? '🏠' : '📦'} ${f.category === 'general' ? 'Dashboard' : f.category === 'kitsg' ? 'KITS G' : 'KITS A'}
+                </span>
+            </div>
+          </div>`;
+            }).join('');
+        }
+
+        // ========================
+        // NAVIGATION
+        // ========================
+        let navHistory = [];
+
+        function navigate(section, pushState = true) {
+            const currentSection = document.querySelector('.section.active')?.id.replace('section-', '');
+            if (pushState && currentSection && currentSection !== section) {
+                navHistory.push(currentSection);
+            }
+
+            // CSS hook for back-button visibility
+            if (section === 'dashboard') {
+                document.body.classList.add('on-home');
+            } else {
+                document.body.classList.remove('on-home');
+            }
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+            const navEl = document.getElementById('nav-' + section);
+            if (navEl) navEl.classList.add('active');
+
+            const sectionEl = document.getElementById('section-' + section);
+            if (sectionEl) sectionEl.classList.add('active');
+
+            if (section === 'dashboard') {
+                loadDashboard();
+            } else if (section === 'images') {
+                renderFilesGrid('images-grid', allFiles.filter(f => f.fileType === 'image'));
+            } else if (section === 'pdfs') {
+                renderFilesGrid('pdfs-grid', allFiles.filter(f => f.fileType === 'pdf'));
+            } else if (section === 'docs') {
+                renderFilesGrid('docs-grid', allFiles.filter(f => f.fileType === 'word'));
+            } else if (section === 'kitsg') {
+                renderFilesGrid('kitsg-grid', allFiles.filter(f => f.category === 'kitsg'));
+            } else if (section === 'kitsa') {
+                renderFilesGrid('kitsa-grid', allFiles.filter(f => f.category === 'kitsa'));
+            }
+        }
+
+        function goBack() {
+            if (navHistory.length > 0) {
+                const prev = navHistory.pop();
+                navigate(prev, false);
+            } else {
+                navigate('dashboard');
+            }
+        }
+
+        // ========================
+        // FILE PREVIEW
+        // ========================
+        function previewFile(id) {
+            const file = allFiles.find(f => f._id === id);
+            if (!file) return;
+
+            const url = `${UPLOADS_BASE}/${file.filename}`;
+            const uploadedBy = file.uploadedBy ? file.uploadedBy.name : 'Admin';
+
+            document.getElementById('preview-title').innerHTML = `
+                ${file.title} 
+                <span style="display:block;font-size:0.75rem;font-weight:400;color:var(--text-muted);margin-top:0.1rem;">
+                    Uploaded by ${uploadedBy}
+                </span>`;
+
+            let content = '';
+            if (file.fileType === 'image') {
+                // View only — right-click disabled to prevent Save As
+                content = `
+                  <div style="position:relative;user-select:none;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                    <img src="${url}" alt="${file.title}"
+                      style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;display:block;"
+                      oncontextmenu="return false;"
+                      draggable="false" />
+                    <div style="
+                      position:absolute;bottom:1rem;right:1.5rem;
+                      background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);
+                      color:#fff;font-size:0.8rem;padding:0.3rem 0.7rem;
+                      border-radius:6px;pointer-events:none;z-index:10;">
+                      🔒 View Only
+                    </div>
+                  </div>`;
+            } else if (file.fileType === 'pdf') {
+                // view=FitH forces the PDF to fit the width of the container
+                content = `<iframe
+                  src="${url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH"
+                  style="width:100%;height:100%;border:none;border-radius:8px;background:white;display:block;">
+                </iframe>`;
+            } else {
+                // Word / Excel / PPT / other — show info, NO download button
+                content = `
+                  <div style="text-align:center;padding:2.5rem 1rem;">
+                    <div style="font-size:4rem;margin-bottom:1rem;">${getFileIcon(file.fileType, file.mimetype)}</div>
+                    <p style="color:var(--text-primary);font-size:1.1rem;font-weight:600;margin-bottom:0.4rem;">${file.title}</p>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.5rem;">${file.originalname || ''} &nbsp;·&nbsp; ${formatSize(file.size)}</p>
+                    <div style="
+                      display:inline-flex;align-items:center;gap:0.5rem;
+                      background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);
+                      border-radius:10px;padding:0.6rem 1.2rem;
+                      color:#a5b4fc;font-size:0.85rem;font-weight:500;">
+                      🔒 This file is view&#8209;only
+                    </div>
+                  </div>`;
+            }
+
+            document.getElementById('preview-content').innerHTML = content;
+            document.getElementById('preview-modal').style.display = 'flex';
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').style.display = 'none';
+            document.getElementById('preview-content').innerHTML = '';
+        }
+
+        function handleLogout() {
+            if (socket) {
+                socket.emit('chat_inactive');
+                socket.disconnect();
+            }
+            clearInterval(timerInterval);
+            clearInterval(sessionCheckInterval);
+            Auth.clear();
+            window.location.href = '../index.html';
+        }
+
+        // Close modals on overlay click
+        document.getElementById('preview-modal').addEventListener('click', function (e) {
+            if (e.target === this) closePreview();
+        });
+
+        // ========================
+        // USER CHAT (Socket.IO)
+        // ========================
+        let socket = null;
+        let adminId = null;
+        let replyToId = null;
+
+        async function initSocket() {
+            if (socket) return;
+            try {
+                const data = await apiRequest('/chat/admin-id');
+                adminId = data.admin._id;
+            } catch (err) { }
+
+            const token = Auth.getToken();
+            socket = io('https://docportal-backend.onrender.com', { auth: { token } });
+
+            socket.on('receive_message', (msg) => {
+                const senderId = msg.sender._id || msg.sender;
+                const receiverId = msg.receiver._id || msg.receiver;
+                const isCurrentConvo = senderId === adminId || receiverId === adminId;
+
+                if (isCurrentConvo) {
+                    appendMessage(msg);
+                    if (document.getElementById('section-chat').classList.contains('active')) {
+                        if (senderId === adminId) {
+                            socket.emit('mark_read', { senderId: adminId });
+                        }
+                    } else if (senderId === adminId) {
+                        updateChatBadge(true);
+                    }
+                }
+            });
+
+            socket.on('user_online', ({ userId }) => {
+                if (userId === adminId) updateAdminLinkStatus(true);
+            });
+
+            socket.on('user_offline', ({ userId }) => {
+                if (userId === adminId) updateAdminLinkStatus(false);
+            });
+
+            socket.on('messages_read', ({ by }) => {
+                document.querySelectorAll('#user-chat-messages .chat-msg.sent .chat-tick').forEach(el => {
+                    el.textContent = '✓✓';
+                    el.className = 'chat-tick seen';
+                });
+            });
+
+            socket.on('message_deleted', ({ messageId }) => {
+                const el = document.querySelector(`[data-msg-id="${messageId}"]`);
+                if (el) {
+                    el.classList.add('deleted');
+                    el.querySelector('.chat-msg-text').textContent = '🚫 Message deleted';
+                    el.querySelector('.chat-msg-actions')?.remove();
+                }
+            });
+
+            socket.on('message_edited', ({ messageId, text }) => {
+                const el = document.querySelector(`[data-msg-id="${messageId}"]`);
+                if (el) {
+                    el.querySelector('.chat-msg-text').textContent = text;
+                    if (!el.querySelector('.chat-edited-label')) {
+                        const meta = el.querySelector('.chat-msg-meta');
+                        const label = document.createElement('span');
+                        label.className = 'chat-edited-label';
+                        label.textContent = '(edited)';
+                        meta.prepend(label);
+                    }
+                }
+            });
+
+            socket.on('user_typing', ({ senderId }) => {
+                if (senderId === adminId) {
+                    document.getElementById('user-typing-indicator').classList.add('active');
+                    const msgBox = document.getElementById('user-chat-messages');
+                    msgBox.scrollTop = msgBox.scrollHeight;
+                }
+            });
+
+            socket.on('user_stop_typing', ({ senderId }) => {
+                if (senderId === adminId) {
+                    document.getElementById('user-typing-indicator').classList.remove('active');
+                }
+            });
+
+            socket.on('user_status_change', ({ userId, isChatActive, lastSeen }) => {
+                if (userId === adminId) {
+                    const statusEl = document.getElementById('user-admin-status');
+                    if (isChatActive) {
+                        statusEl.textContent = '🟢 Online';
+                        statusEl.style.color = '#4ade80';
+                    } else {
+                        statusEl.textContent = 'Offline';
+                        statusEl.style.color = 'var(--text-muted)';
+                    }
+                }
+            });
+        }
+
+        function updateAdminLinkStatus(online) {
+            const status = document.getElementById('user-admin-status');
+            if (status) {
+                status.textContent = online ? '🟢 Online' : 'Offline';
+                status.style.color = online ? '#4ade80' : 'var(--text-muted)';
+            }
+        }
+
+        function updateChatBadge(hasUnread) {
+            const badge = document.getElementById('user-chat-badge');
+            if (badge) badge.style.display = hasUnread ? 'inline-flex' : 'none';
+        }
+
+        async function loadChatHistory() {
+            if (!adminId) return;
+            const msgBox = document.getElementById('user-chat-messages');
+            msgBox.innerHTML = '<div class="spinner"></div>';
+            try {
+                const data = await apiRequest(`/chat/history/${adminId}`);
+                msgBox.innerHTML = '';
+                data.messages.forEach(msg => appendMessage(msg, false));
+                msgBox.scrollTop = msgBox.scrollHeight;
+                socket.emit('mark_read', { senderId: adminId });
+            } catch (err) { }
+        }
+
+        let editingMsgId = null;
+
+        function appendMessage(msg, scroll = true) {
+            const meId = Auth.getUser().id || Auth.getUser()._id;
+            const senderId = msg.sender._id || msg.sender;
+            const isMine = senderId === meId;
+            const box = document.getElementById('user-chat-messages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg ' + (isMine ? 'sent' : 'received');
+            if (msg.text === '🚫 Message deleted') div.classList.add('deleted');
+
+            if (msg._id) div.dataset.msgId = msg._id;
+            const time = new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+            let quotedHtml = '';
+            if (msg.replyTo && msg.replyTo.text) {
+                const quoteSender = msg.replyTo.sender.name || (msg.replyTo.sender === meId ? 'You' : 'Admin');
+                quotedHtml = `
+                    <div class="chat-msg-quote">
+                        <span class="chat-msg-quote-name">${quoteSender}</span>
+                        <span class="chat-msg-quote-text">${msg.replyTo.text}</span>
+                    </div>`;
+            }
+
+            let tickHtml = '';
+            let actionsHtml = '';
+            if (msg.text !== '🚫 Message deleted') {
+                if (isMine) {
+                    const seen = msg.read;
+                    tickHtml = `<span class="chat-tick ${seen ? 'seen' : ''}">${seen ? '✓✓' : '✓'}</span>`;
+                }
+
+                let menuBtns = `<button onclick="userStartReply('${msg._id}')">↩️ Reply</button>`;
+                menuBtns += `<button onclick="userCopyMessage('${msg._id}')">📋 Copy</button>`;
+                if (isMine) {
+                    menuBtns += `<button onclick="userStartEdit('${msg._id}')">✏️ Edit</button>`;
+                    menuBtns += `<button class="delete-action" onclick="userDeleteMessage('${msg._id}')">🗑️ Delete</button>`;
+                }
+
+                actionsHtml = `
+                    <div class="chat-msg-actions">
+                        <button class="chat-msg-dropdown-btn" onclick="toggleUserMsgMenu(event, '${msg._id}')" title="Options">▾</button>
+                        <div class="chat-msg-menu" id="umenu-${msg._id}">
+                            ${menuBtns}
+                        </div>
+                    </div>`;
+            }
+
+            // Render attachment
+            let attachHtml = '';
+            if (msg.attachment && msg.attachment.url) {
+                const src = `https://docportal-backend.onrender.com${msg.attachment.url}`;
+                if (msg.attachment.mimetype && msg.attachment.mimetype.startsWith('image/')) {
+                    attachHtml = `<img class="chat-attachment-img" src="${src}" alt="${msg.attachment.filename}" onclick="window.open('${src}','_blank')" />`;
+                } else {
+                    const icons = { 'application/pdf': '📄', 'video/mp4': '🎬', 'video/webm': '🎬' };
+                    const mt = msg.attachment.mimetype || '';
+                    const icon = icons[mt] || (mt.includes('word') ? '📝' : (mt.includes('excel') || mt.includes('spreadsheet') ? '📊' : '📎'));
+                    const sz = msg.attachment.size ? formatSize(msg.attachment.size) : '';
+                    attachHtml = `<a class="chat-attachment-file" href="${src}" target="_blank" download="${msg.attachment.filename}">
+                        <span class="chat-attachment-file-icon">${icon}</span>
+                        <div><span class="chat-attachment-file-name">${msg.attachment.filename}</span>${sz ? `<div class="chat-attachment-file-size">${sz}</div>` : ''}</div>
+                    </a>`;
+                }
+            }
+            const msgText = msg.text ? `<span class="chat-msg-text">${msg.text}</span>` : '';
+
+            div.innerHTML = `
+                <div class="chat-bubble" onclick="this.classList.toggle('active')">
+                    ${quotedHtml}
+                    ${attachHtml}
+                    ${msgText}
+                    <span class="chat-msg-meta">
+                        ${msg.isEdited ? '<span class="chat-edited-label">(edited)</span>' : ''}
+                        ${time}${tickHtml}
+                    </span>
+                    ${actionsHtml}
+                </div>`;
+            box.appendChild(div);
+            if (scroll) box.scrollTop = box.scrollHeight;
+        }
+
+        function toggleUserMsgMenu(event, msgId) {
+            event.stopPropagation();
+            const allMenus = document.querySelectorAll('.chat-msg-menu');
+            const targetMenu = document.getElementById(`umenu-${msgId}`);
+            const isOpen = targetMenu.classList.contains('active');
+            allMenus.forEach(m => m.classList.remove('active'));
+            if (!isOpen) targetMenu.classList.add('active');
+        }
+
+        function userCopyMessage(msgId) {
+            const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (!el) return;
+            const text = el.querySelector('.chat-msg-text').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                Toast.success('Message copied');
+            });
+        }
+
+        function userStartReply(msgId) {
+            const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (!el) return;
+            const text = el.querySelector('.chat-msg-text').textContent;
+            replyToId = msgId;
+            document.getElementById('user-reply-name').textContent = el.classList.contains('sent') ? 'You' : 'Admin';
+            document.getElementById('user-reply-text').textContent = text;
+            document.getElementById('user-reply-preview').style.display = 'flex';
+            document.getElementById('user-chat-input').focus();
+        }
+
+        function userCancelReply() {
+            replyToId = null;
+            document.getElementById('user-reply-preview').style.display = 'none';
+        }
+
+        async function userDeleteMessage(msgId) {
+            if (!confirm('Delete this message?')) return;
+            try {
+                await apiRequest(`/chat/message/${msgId}`, 'DELETE');
+                const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+                if (el) {
+                    el.classList.add('deleted');
+                    el.querySelector('.chat-msg-text').textContent = '🚫 Message deleted';
+                    el.querySelector('.chat-msg-actions')?.remove();
+                }
+                socket.emit('delete_message', { messageId: msgId, receiverId: adminId });
+            } catch (err) {
+                Toast.error('Failed to delete');
+            }
+        }
+
+        function userStartEdit(msgId) {
+            const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (!el) return;
+            const text = el.querySelector('.chat-msg-text').textContent;
+            editingMsgId = msgId;
+            const input = document.getElementById('user-chat-input');
+            input.value = text;
+            input.focus();
+            document.querySelector('.chat-input-bar').classList.add('editing-active');
+            if (!document.getElementById('user-cancel-edit')) {
+                const btn = document.createElement('button');
+                btn.id = 'user-cancel-edit';
+                btn.className = 'btn-cancel-edit';
+                btn.innerHTML = '✕';
+                btn.onclick = userCancelEdit;
+                input.parentNode.insertBefore(btn, input);
+            }
+        }
+
+        function userCancelEdit() {
+            editingMsgId = null;
+            document.getElementById('user-chat-input').value = '';
+            document.querySelector('.chat-input-bar').classList.remove('editing-active');
+            document.getElementById('user-cancel-edit')?.remove();
+        }
+
+        async function userSaveEdit() {
+            const input = document.getElementById('user-chat-input');
+            const text = input.value.trim();
+            if (!text || !editingMsgId) return;
+            try {
+                await apiRequest(`/chat/message/${editingMsgId}`, 'PATCH', { text });
+                const el = document.querySelector(`[data-msg-id="${editingMsgId}"]`);
+                if (el) {
+                    el.querySelector('.chat-msg-text').textContent = text;
+                    if (!el.querySelector('.chat-edited-label')) {
+                        const meta = el.querySelector('.chat-msg-meta');
+                        const label = document.createElement('span');
+                        label.className = 'chat-edited-label';
+                        label.textContent = '(edited)';
+                        meta.prepend(label);
+                    }
+                }
+                socket.emit('edit_message', { messageId: editingMsgId, receiverId: adminId, text });
+                userCancelEdit();
+            } catch (err) {
+                Toast.error('Failed to update');
+            }
+        }
+
+        let typingTimeout = null;
+        function handleUserTyping() {
+            if (!adminId || !socket) return;
+            socket.emit('typing', { receiverId: adminId });
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                socket.emit('stop_typing', { receiverId: adminId });
+            }, 2000);
+        }
+
+        // ── User File Attachment ─────────────────────────────────────
+        let userPendingAttachment = null;
+
+        function userHandleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+            userPendingAttachment = { file };
+
+            const bar = document.getElementById('user-file-preview-bar');
+            const thumb = document.getElementById('user-file-preview-thumb');
+            document.getElementById('user-file-preview-name').textContent = file.name;
+            document.getElementById('user-file-preview-size').textContent = formatSize(file.size);
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    thumb.innerHTML = `<img src="${e.target.result}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;" />`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                const icons = { 'application/pdf': '📄', 'video/mp4': '🎬', 'video/webm': '🎬' };
+                const icon = file.type.startsWith('image/') ? '🖼️' : (icons[file.type] || (file.type.includes('word') ? '📝' : (file.type.includes('excel') || file.type.includes('spreadsheet') ? '📊' : '📎')));
+                thumb.innerHTML = `<div style="font-size:2rem;">${icon}</div>`;
+            }
+
+            bar.classList.add('active');
+            input.value = '';
+        }
+
+        function userCancelFile() {
+            userPendingAttachment = null;
+            document.getElementById('user-file-preview-bar').classList.remove('active');
+            document.getElementById('user-file-preview-thumb').innerHTML = '';
+        }
+
+        function userSendMessage() {
+            if (editingMsgId) {
+                userSaveEdit();
+                return;
+            }
+            const input = document.getElementById('user-chat-input');
+            const text = input.value.trim();
+            const hasFile = userPendingAttachment && userPendingAttachment.file;
+
+            if (!text && !hasFile) return;
+            if (!adminId || !socket) return;
+
+            if (hasFile) {
+                const indicator = document.getElementById('user-uploading-indicator');
+                indicator.classList.add('active');
+
+                const formData = new FormData();
+                formData.append('file', userPendingAttachment.file);
+
+                apiRequest('/chat/upload', 'POST', formData, true)
+                    .then(data => {
+                        indicator.classList.remove('active');
+                        userCancelFile();
+                        socket.emit('send_message', {
+                            receiverId: adminId,
+                            text: text || '',
+                            replyTo: replyToId,
+                            attachment: data.attachment
+                        });
+                        input.value = '';
+                        userCancelReply();
+                        clearTimeout(typingTimeout);
+                        socket.emit('stop_typing', { receiverId: adminId });
+                    })
+                    .catch(() => {
+                        indicator.classList.remove('active');
+                        Toast.error('File upload failed');
+                    });
+            } else {
+                socket.emit('send_message', { receiverId: adminId, text, replyTo: replyToId });
+                input.value = '';
+                userCancelReply();
+                clearTimeout(typingTimeout);
+                socket.emit('stop_typing', { receiverId: adminId });
+            }
+        }
+
+        // Navigate + peer chat is handled below by peer-chat.js
+
+        // Initial page load
+        window.addEventListener('load', function () {
+            loadDashboard();
+            startSessionPolling();
+            registerServiceWorker();
+        });
+
+        async function registerServiceWorker() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    const registration = await navigator.serviceWorker.register('../sw.js');
+                    console.log('SW Registered');
+                    askNotificationPermission(registration);
+                } catch (e) { console.error('SW Error', e); }
+            }
+        }
+
+        async function askNotificationPermission(registration) {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                // Subscribe to push (Requires VAPID keys on backend)
+                // subscribeUserToPush(registration);
+            }
+        }
+
+        // ── Sidebar Toggle (Hamburger) ────────────────────────────
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-open');
+        }
+
+        // Close sidebar when any nav-item is clicked (mobile)
+        document.querySelectorAll('.sidebar .nav-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                if (window.innerWidth <= 1024) {
+                    document.body.classList.remove('sidebar-open');
+                }
+            });
+        });
+    </script>
+    <!-- Peer-to-peer chat engine (includes navigate override and socket setup) -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="../js/peer-chat.js"></script>
+    <script src="../js/screen-share-user.js"></script>
+</body>
+
+</html>

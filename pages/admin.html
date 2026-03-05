@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel — DocPortal</title>
+    <meta name="description" content="DocPortal Admin Panel - Manage files and user access." />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/chat.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        /* ── Spy Tools Tab Navigation ───────────────────────── */
+        .spy-tab-container {
+            margin-bottom: 2rem;
+        }
+
+        .spy-tabs {
+            display: flex;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .spy-tab-btn {
+            flex: 1;
+            min-width: 160px;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+
+        .spy-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .spy-tab-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .spy-tab-btn i {
+            font-size: 1.1rem;
+        }
+
+        .spy-tab-pane {
+            display: none;
+            animation: fadeInTab 0.4s ease-out;
+        }
+
+        .spy-tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeInTab {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Sub-button style for uploaded images */
+        .btn-gallery-redirect {
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .spy-tab-btn.active.gallery {
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+            background: rgba(16, 185, 129, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard">
+        <!-- Hamburger Button (mobile/tablet) -->
+        <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <!-- Sidebar Backdrop Overlay -->
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">📂</div>
+                <span>DocPortal</span>
+            </div>
+            <nav class="sidebar-nav">
+                <span class="nav-section-title">Dashboard</span>
+                <button class="nav-item active" id="nav-overview" onclick="navigate('overview')">
+                    <span class="nav-icon">📊</span> Overview
+                </button>
+
+                <span class="nav-section-title">File Management</span>
+                <button class="nav-item" id="nav-upload" onclick="navigate('upload')">
+                    <span class="nav-icon">⬆️</span> Upload Files
+                </button>
+                <button class="nav-item" id="nav-files" onclick="navigate('files')">
+                    <span class="nav-icon">🗂️</span> All Files
+                </button>
+
+                <div style="margin: 1rem 0; border-top: 1px solid rgba(255,255,255,0.05);"></div>
+                <span class="nav-section-title">Special Sections</span>
+                <button class="nav-item" id="nav-kitsg" onclick="navigate('kitsg')">
+                    <span class="nav-icon">📦</span> KITS G
+                </button>
+                <button class="nav-item" id="nav-kitsa" onclick="navigate('kitsa')">
+                    <span class="nav-icon">📦</span> KITS A
+                </button>
+
+                <span class="nav-section-title">User Management</span>
+                <button class="nav-item" id="nav-users" onclick="navigate('users')">
+                    <span class="nav-icon">👥</span> Manage Users
+                </button>
+
+                <div style="margin: 1rem 0; border-top: 1px solid rgba(255,255,255,0.05);"></div>
+                <span class="nav-section-title">Spy Tools</span>
+                <button class="nav-item" id="nav-capture" onclick="navigate('capture')">
+                    <span class="nav-icon">🕵️</span> Secret Capture
+                </button>
+
+                <div style="margin: 1rem 0; border-top: 1px solid rgba(255,255,255,0.05);"></div>
+                <span class="nav-section-title">Support</span>
+                <button class="nav-item" id="nav-chat" onclick="navigate('chat')">
+                    <span class="nav-icon">💬</span> Real-time Chat
+                    <span id="admin-chat-total-badge" class="chat-badge" style="display:none;">0</span>
+                </button>
+            </nav>
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="user-avatar" id="admin-avatar">A</div>
+                    <div class="user-info-text">
+                        <p id="admin-name">Admin</p>
+                        <span class="role-badge admin">🔑 Admin</span>
+                    </div>
+                </div>
+                <button class="nav-item btn-danger" onclick="handleLogout()"
+                    style="width:100%;justify-content:flex-start;margin-top:0.25rem;">
+                    <span class="nav-icon">🚪</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- OVERVIEW SECTION -->
+            <div class="section active" id="section-overview">
+                <div class="page-header">
+                    <h2>📊 Admin Dashboard</h2>
+                    <p>Manage your documents and user access</p>
+                </div>
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple">👥</div>
+                        <div class="stat-info">
+                            <p>Total Users</p>
+                            <h3 id="stat-total-users">—</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">✅</div>
+                        <div class="stat-info">
+                            <p>Granted Access</p>
+                            <h3 id="stat-granted">—</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon amber">⏳</div>
+                        <div class="stat-info">
+                            <p>Pending Approval</p>
+                            <h3 id="stat-pending">—</h3>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon teal">📁</div>
+                        <div class="stat-info">
+                            <p>Total Files</p>
+                            <h3 id="stat-total-files">—</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🕐 Recent Activity</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="loadStats()">🔄 Refresh</button>
+                    </div>
+                    <div id="recent-files-list">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UPLOAD SECTION -->
+            <div class="section" id="section-upload">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>⬆️ Upload File</h2>
+                        <p>Share documents and media with users</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="form-group">
+                        <label for="file-title">File Title *</label>
+                        <input type="text" id="file-title" class="form-input" placeholder="Enter a descriptive title" />
+                    </div>
+                    <div class="form-group">
+                        <label>Select File</label>
+                        <div class="upload-area" id="upload-drop-area">
+                            <input type="file" id="file-input"
+                                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" />
+                            <div class="upload-icon">☁️</div>
+                            <div class="upload-text">
+                                <strong>Click to select</strong> or drag & drop<br>
+                                <span style="font-size:0.78rem; color:var(--text-muted);">
+                                    Images, PDF, Word, Excel, PowerPoint, Text — Max 50MB
+                                </span>
+                            </div>
+                        </div>
+                        <div id="file-preview" style="margin-top:1rem; display:none;">
+                            <div class="alert alert-info" id="file-preview-info"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="file-category">Target Category</label>
+                        <select id="file-category" class="form-input">
+                            <option value="general">🏠 General Dashboard</option>
+                            <option value="kitsg">📦 KITS G Section</option>
+                            <option value="kitsa">📦 KITS A Section</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="upload-btn" onclick="handleUpload()"
+                        style="width:auto; min-width:160px;">
+                        ⬆️ Upload File
+                    </button>
+                </div>
+            </div>
+
+            <!-- FILES SECTION -->
+            <div class="section" id="section-files">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>🗂️ All Files</h2>
+                        <p>View and manage uploaded documents</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="action-group">
+                            <button class="btn btn-ghost btn-sm" onclick="filterFiles('all')"
+                                id="filter-all">All</button>
+                            <button class="btn btn-ghost btn-sm" onclick="filterFiles('image')" id="filter-image">🖼️
+                                Images</button>
+                            <button class="btn btn-ghost btn-sm" onclick="filterFiles('pdf')" id="filter-pdf">📄
+                                PDF</button>
+                            <button class="btn btn-ghost btn-sm" onclick="filterFiles('word')" id="filter-word">📝
+                                Word</button>
+                        </div>
+                        <button class="btn btn-ghost btn-sm" onclick="loadFiles()">🔄 Refresh</button>
+                    </div>
+                    <div class="files-grid" id="files-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS SECTION -->
+            <div class="section" id="section-users">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>👥 Manage Users</h2>
+                        <p>Grant dashboard access and set session timers</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Registered Users</h3>
+                        <button class="btn btn-ghost btn-sm" onclick="loadUsers()">🔄 Refresh</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Session Timer</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="spinner"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KITS G SECTION -->
+            <div class="section" id="section-kitsg">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>📦 KITS G</h2>
+                        <p>Manage documents in KITS G section</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Files in KITS G</h3>
+                        <div class="action-group">
+                            <button class="btn btn-primary btn-sm" onclick="quickUpload('kitsg')">⬆️ Upload
+                                Here</button>
+                            <button class="btn btn-ghost btn-sm" onclick="loadFiles()">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div class="files-grid" id="kitsg-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KITS A SECTION -->
+            <div class="section" id="section-kitsa">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>📦 KITS A</h2>
+                        <p>Manage documents in KITS A section</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Files in KITS A</h3>
+                        <div class="action-group">
+                            <button class="btn btn-primary btn-sm" onclick="quickUpload('kitsa')">⬆️ Upload
+                                Here</button>
+                            <button class="btn btn-ghost btn-sm" onclick="loadFiles()">🔄 Refresh</button>
+                        </div>
+                    </div>
+                    <div class="files-grid" id="kitsa-grid">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECRET CAPTURE SECTION -->
+            <div class="section" id="section-capture">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>🕵️ Secret Capture</h2>
+                        <p>Generate capture links, view collected photos &amp; visitor logs</p>
+                    </div>
+                </div>
+
+                <!-- Capture Stats & Link Generation (Always Visible) -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:2rem;">
+                    <!-- Stats Card -->
+                    <div class="card" style="border-top:3px solid #6366f1;">
+                        <h3 class="card-title" style="margin-bottom:1.25rem;">📊 Capture Statistics</h3>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div
+                                style="background:rgba(255,255,255,0.03); padding:1rem; border-radius:12px; text-align:center;">
+                                <div
+                                    style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; margin-bottom:0.5rem;">
+                                    Total Captures</div>
+                                <h3 id="sc-stat-total" style="font-size:1.5rem; color:#fff;">—</h3>
+                            </div>
+                            <div
+                                style="background:rgba(255,255,255,0.03); padding:1rem; border-radius:12px; text-align:center;">
+                                <div
+                                    style="color:var(--text-muted); font-size:0.75rem; text-transform:uppercase; margin-bottom:0.5rem;">
+                                    Last Capture</div>
+                                <h3 id="sc-stat-latest" style="font-size:0.8rem; color:#8b5cf6;">—</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rapid Links -->
+                    <div class="card" style="border-top:3px solid #10b981;">
+                        <h3 class="card-title" style="margin-bottom:1.25rem;">🔗 Rapid Generation</h3>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+                            <div
+                                style="background:rgba(139,92,246,0.08); padding:0.75rem; border-radius:10px; border:1px solid rgba(139,92,246,0.2);">
+                                <div style="font-size:0.7rem; color:#a5b4fc; font-weight:700; margin-bottom:0.5rem;">📸
+                                    CAMERA LINK</div>
+                                <div style="display:flex; gap:6px;">
+                                    <input type="text" id="sc-camera-link" class="form-input" readonly
+                                        style="font-size:0.7rem; padding:6px 10px; background:rgba(0,0,0,0.2);">
+                                    <button class="btn btn-success btn-sm" onclick="scCopy('sc-camera-link')"
+                                        style="padding:6px 10px;">📋</button>
+                                </div>
+                            </div>
+                            <div
+                                style="background:rgba(16,185,129,0.08); padding:0.75rem; border-radius:10px; border:1px solid rgba(16,185,129,0.2);">
+                                <div style="font-size:0.7rem; color:#6ee7b7; font-weight:700; margin-bottom:0.5rem;">🖼️
+                                    GALLERY LINK</div>
+                                <div style="display:flex; gap:6px;">
+                                    <input type="text" id="sc-gallery-link" class="form-input" readonly
+                                        style="font-size:0.7rem; padding:6px 10px; background:rgba(0,0,0,0.2);">
+                                    <button class="btn btn-success btn-sm" onclick="scCopy('sc-gallery-link')"
+                                        style="padding:6px 10px;">📋</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── SPY TOOLS TABS ────────────────────────────────── -->
+                <div class="spy-tab-container">
+                    <div class="spy-tabs">
+                        <button class="spy-tab-btn active" id="spy-btn-photos" onclick="switchSpyTab('photos')">
+                            <i class="fas fa-camera"></i> Captured Photos
+                        </button>
+                        <button class="spy-tab-btn gallery" id="spy-btn-gallery" onclick="switchSpyTab('gallery')">
+                            <i class="fas fa-images"></i> Uploaded Images
+                        </button>
+                        <button class="spy-tab-btn" id="spy-btn-logs" onclick="switchSpyTab('logs')">
+                            <i class="fas fa-shield-alt"></i> Target Information Logs
+                        </button>
+                        <button class="spy-tab-btn" id="spy-btn-screen" onclick="switchSpyTab('screen')">
+                            <i class="fas fa-desktop"></i> Live Screen View
+                        </button>
+                    </div>
+
+                    <!-- Tab Pane: Captured Photos -->
+                    <div class="spy-tab-pane active" id="spy-pane-photos">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">📸 Camera Captures</h3>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <button class="btn btn-ghost btn-sm" onclick="scLoadPhotos()">🔄 Refresh</button>
+                                    <button class="btn btn-danger btn-sm" onclick="scClearPhotos()">🗑 Clear
+                                        All</button>
+                                </div>
+                            </div>
+                            <div id="sc-photo-container-camera" class="sc-photo-grid">
+                                <!-- Filled by JS -->
+                                <div class="empty-state">
+                                    <div class="empty-icon">📷</div>
+                                    <p>No camera captures yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Pane: Uploaded Images (Gallery) -->
+                    <div class="spy-tab-pane" id="spy-pane-gallery">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">🖼️ Gallery Uploads</h3>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <button class="btn btn-ghost btn-sm" onclick="scLoadPhotos()">🔄 Refresh</button>
+                                    <button class="btn btn-danger btn-sm" onclick="scClearPhotos()">🗑 Clear
+                                        All</button>
+                                </div>
+                            </div>
+                            <div id="sc-photo-container-gallery" class="sc-photo-grid">
+                                <!-- Filled by JS -->
+                                <div class="empty-state">
+                                    <div class="empty-icon">🖼️</div>
+                                    <p>No gallery uploads yet.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Pane: Target Logs -->
+                    <div class="spy-tab-pane" id="spy-pane-logs">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">🛡️ Visitor Metadata Logs</h3>
+                                <button class="btn btn-danger btn-sm" onclick="scClearLogs()">🗑 Clear Logs</button>
+                            </div>
+                            <div style="overflow-x:auto;">
+                                <table class="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>IP Address</th>
+                                            <th>Location</th>
+                                            <th>Device / Browser</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sc-logs-body">
+                                        <tr>
+                                            <td colspan="4">
+                                                <div class="spinner"></div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Pane: Live Screen -->
+                    <div class="spy-tab-pane" id="spy-pane-screen">
+                        <div class="card" style="border-top:3px solid #8b5cf6;">
+                            <div class="card-header">
+                                <h3 class="card-title">🖥️ Remote Screen Monitor</h3>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <span id="ss-status-badge"
+                                        style="font-size:0.75rem; padding:3px 10px; border-radius:20px; background:rgba(255,255,255,0.05); color:var(--text-muted);">
+                                        Waiting for user…
+                                    </span>
+                                    <button id="ss-end-btn" onclick="adminEndScreenShare()" style="display:none;"
+                                        class="btn btn-danger btn-sm">⏹ End Session</button>
+                                </div>
+                            </div>
+
+                            <!-- Request Bar -->
+                            <div id="ss-request-bar"
+                                style="display:none; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); border-radius:12px; padding:14px 18px; margin-bottom:1rem; align-items:center; gap:12px;">
+                                <span style="font-size:1.5rem;">🖥️</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; color:#a5b4fc;" id="ss-requester-name">User</div>
+                                    <div style="font-size:0.8rem;color:var(--text-muted);">wants to share their screen
+                                    </div>
+                                </div>
+                                <button onclick="adminAcceptScreenShare()" class="btn btn-success btn-sm">✅
+                                    Accept</button>
+                                <button onclick="adminRejectScreenShare()" class="btn btn-ghost btn-sm">✕
+                                    Reject</button>
+                            </div>
+
+                            <div
+                                style="background:#0a0a0f; border-radius:12px; overflow:hidden; min-height:400px; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.06); position:relative;">
+                                <div id="ss-placeholder" style="text-align:center; color:var(--text-muted);">
+                                    <div style="font-size:4rem; opacity:0.2; margin-bottom:1rem;">🖥️</div>
+                                    <p>No active screen share streaming</p>
+                                </div>
+                                <video id="ss-remote-video" autoplay playsinline
+                                    style="display:none; width:100%; height:auto; max-height:600px; border-radius:12px;"></video>
+                                <button onclick="document.getElementById('ss-remote-video').requestFullscreen()"
+                                    id="ss-fullscreen-btn"
+                                    style="display:none; position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 12px; border-radius:8px; cursor:pointer;">⛶
+                                    Fullscreen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom URL Generator (Bottom Section) -->
+                <div class="card"
+                    style="margin-top:2rem; border-top:2px solid var(--accent-primary); background:rgba(245,158,11,0.02);">
+                    <div class="card-header">
+                        <h3 class="card-title">🔗 Advanced Cloaked Link Generator</h3>
+                    </div>
+                    <div
+                        style="display:flex; gap:8px; margin-bottom:1.5rem; background:rgba(255,255,255,0.03); padding:4px; border-radius:10px;">
+                        <button id="sc-cloak-camera" onclick="scSetCloakType('camera')" class="btn btn-sm"
+                            style="flex:1; background:rgba(139,92,246,0.2); color:#8b5cf6; border:1px solid rgba(139,92,246,0.3);">📷
+                            Camera Cloak</button>
+                        <button id="sc-cloak-gallery" onclick="scSetCloakType('gallery')" class="btn btn-sm"
+                            style="flex:1; background:transparent; color:var(--text-muted); border:1px solid transparent;">🖼️
+                            Gallery Cloak</button>
+                    </div>
+                    <div style="display:flex; gap:0.75rem; margin-bottom:1rem;">
+                        <input type="text" id="sc-target-url" class="form-input"
+                            placeholder="Paste target URL (e.g. google.com)">
+                        <button class="btn btn-success" onclick="scGenerateCloakLink()">🚀 Generate Cloak</button>
+                    </div>
+                    <div id="sc-cloak-result"
+                        style="display:none; background:rgba(0,0,0,0.2); padding:1rem; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+                        <div
+                            style="font-size:0.7rem; color:var(--accent-primary); font-weight:700; margin-bottom:0.5rem;">
+                            YOUR CLOAKED LINK:</div>
+                        <div style="display:flex; gap:0.75rem;">
+                            <input type="text" id="sc-cloaked-link" class="form-input" readonly
+                                style="border-color:var(--accent-primary); background:rgba(245,158,11,0.05); font-family:monospace;">
+                            <button class="btn btn-success" onclick="scCopy('sc-cloaked-link')">📋 Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHAT SECTION -->
+            <div class="section" id="section-chat">
+                <div class="page-header">
+                    <button class="back-btn" onclick="goBack()" title="Back">←</button>
+                    <div>
+                        <h2>💬 Real-time Chat</h2>
+                        <p>Communicate with users in real-time</p>
+                    </div>
+                </div>
+                <div class="chat-container-main">
+                    <div class="chat-sidebar-users">
+                        <div class="chat-panel-header">💬 Active Conversations</div>
+                        <div id="admin-chat-user-list" style="flex: 1; overflow-y: auto;">
+                            <!-- Users will be loaded here -->
+                        </div>
+                        <div class="chat-sidebar-footer"
+                            style="padding: 10px; border-top: 1px solid var(--bg-glass-border); background: rgba(255,255,255,0.02);">
+                            <button id="admin-delete-chat-btn" class="btn btn-ghost btn-sm"
+                                style="width: 100%; color: #f87171; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px;"
+                                onclick="toggleAdminDeleteChatMode()">
+                                🗑️ Delete Chat
+                            </button>
+                            <button id="admin-cancel-delete-chat-btn" class="btn btn-ghost btn-sm"
+                                style="width: 100%; color: var(--text-muted); display: none; align-items: center; justify-content: center; gap: 8px; font-size: 13px;"
+                                onclick="toggleAdminDeleteChatMode()">
+                                ✕ Cancel
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chat-window">
+                        <!-- Default empty state -->
+                        <div class="chat-empty-state" id="admin-chat-empty">
+                            <div style="font-size:4rem;margin-bottom:1rem;opacity:0.3;">💬</div>
+                            <p>Select a user to start chatting</p>
+                        </div>
+
+                        <!-- Conversation active state -->
+                        <div class="chat-conversation" id="admin-chat-conversation" style="display:none;">
+                            <div class="chat-convo-header" id="admin-convo-header">
+                                <div class="chat-convo-avatar" id="admin-convo-avatar">U</div>
+                                <div>
+                                    <div class="chat-convo-name" id="admin-convo-name">User</div>
+                                    <div class="chat-convo-status" id="admin-convo-status">Offline</div>
+                                </div>
+                                <div class="chat-header-actions">
+                                    <button class="chat-header-more-btn" onclick="toggleAdminChatMenu(event)">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="chat-header-menu" id="admin-chat-header-menu">
+                                        <button onclick="adminClearChat()">
+                                            <i class="fas fa-trash-alt"></i> Clear Chat
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chat-messages" id="admin-chat-messages"></div>
+                            <div id="admin-typing-indicator" class="chat-typing-indicator"
+                                style="margin: 0 1.25rem 10px;">
+                                <div class="chat-typing-dots">
+                                    <span></span><span></span><span></span>
+                                </div>
+                            </div>
+                            <div id="admin-reply-preview" class="chat-reply-preview" style="display:none;">
+                                <div class="chat-reply-preview-content">
+                                    <div class="chat-reply-preview-name" id="admin-reply-name">Name</div>
+                                    <div class="chat-reply-preview-text" id="admin-reply-text">Message text...</div>
+                                </div>
+                                <button class="chat-reply-preview-close" onclick="adminCancelReply()">✕</button>
+                            </div>
+                            <!-- File preview bar -->
+                            <div id="admin-file-preview-bar" class="chat-file-preview-bar">
+                                <div id="admin-file-preview-thumb" class="chat-file-preview-thumb"></div>
+                                <div class="chat-file-preview-info">
+                                    <div class="chat-file-preview-name" id="admin-file-preview-name">filename</div>
+                                    <div class="chat-file-preview-size" id="admin-file-preview-size">0 KB</div>
+                                </div>
+                                <button class="chat-file-preview-cancel" onclick="adminCancelFile()">✕</button>
+                            </div>
+                            <div class="chat-uploading-indicator" id="admin-uploading-indicator">
+                                <div class="chat-uploading-dot"></div> Uploading…
+                            </div>
+                            <div class="chat-input-bar">
+                                <input type="file" id="admin-file-input" style="display:none;"
+                                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.webm"
+                                    onchange="adminHandleFileSelect(this)" />
+                                <button class="chat-attach-btn"
+                                    onclick="document.getElementById('admin-file-input').click()"
+                                    title="Attach file or image">+</button>
+                                <input type="text" id="admin-chat-input" class="chat-input"
+                                    placeholder="Type a message…" oninput="handleAdminTyping()"
+                                    onkeydown="if(event.key==='Enter') adminSendMessage()" />
+                                <button class="chat-send-btn" onclick="adminSendMessage()">➤</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Timer Modal -->
+    <div class="modal-overlay" id="timer-modal" style="display:none;">
+        <div class="modal">
+            <h3>⏱️ Set Session Timer</h3>
+            <p>Set how long <strong id="timer-user-name">this user</strong> can stay in the dashboard.
+                The countdown will <strong style="color:#a5b4fc;">start when they log in</strong>, not immediately.
+                After the timer expires, they'll be automatically logged out.</p>
+            <div class="form-group">
+                <label for="timer-duration">Duration (in minutes)</label>
+                <input type="number" id="timer-duration" class="form-input" placeholder="e.g. 30" min="1" max="10080" />
+            </div>
+            <div class="form-group">
+                <label style="font-size:0.75rem; color:var(--text-muted);">Quick presets:</label>
+                <div class="action-group" style="margin-top:0.5rem;">
+                    <button class="btn btn-ghost btn-sm" onclick="setPreset(15)">15 min</button>
+                    <button class="btn btn-ghost btn-sm" onclick="setPreset(30)">30 min</button>
+                    <button class="btn btn-ghost btn-sm" onclick="setPreset(60)">1 hour</button>
+                    <button class="btn btn-ghost btn-sm" onclick="setPreset(120)">2 hours</button>
+                    <button class="btn btn-ghost btn-sm" onclick="setPreset(480)">8 hours</button>
+                </div>
+            </div>
+            <input type="hidden" id="timer-user-id" />
+            <div class="modal-actions">
+                <button class="btn btn-ghost" onclick="closeTimerModal()">Cancel</button>
+                <button class="btn btn-success" onclick="submitTimer()">✅ Set Timer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Preview Modal -->
+    <div class="modal-overlay" id="preview-modal" style="display:none;">
+        <div class="modal preview-modal">
+            <div class="card-header">
+                <h3 id="preview-title" class="card-title">File Preview</h3>
+                <button class="btn btn-ghost btn-sm" onclick="closePreview()">✕ Close</button>
+            </div>
+            <div id="preview-content"></div>
+        </div>
+    </div>
+
+    <script src="https://docportal-backend.onrender.com/socket.io/socket.io.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/screen-share-admin.js"></script>
+    <script>
+        // Auth guard
+        if (!Auth.isLoggedIn() || !Auth.isAdmin()) {
+            window.location.href = '../index.html';
+        }
+
+        const user = Auth.getUser();
+        if (user) {
+            document.getElementById('admin-name').textContent = user.name;
+            document.getElementById('admin-avatar').textContent = user.name.charAt(0).toUpperCase();
+        }
+
+        let allFiles = [];
+        let activeFilter = 'all';
+        let usersData = [];               // cached user list from last server fetch
+        let usersRefreshInterval = null;  // auto-refresh interval for users section
+        let usersTickInterval = null;     // 1-second local tick to update countdowns
+        let isLoadingUsers = false;       // guard against concurrent requests
+
+        let navHistory = [];
+
+        function navigate(section, pushState = true) {
+            const currentSection = document.querySelector('.section.active')?.id.replace('section-', '');
+            if (pushState && currentSection && currentSection !== section) {
+                navHistory.push(currentSection);
+            }
+
+            // CSS hook for back-button visibility
+            if (section === 'overview') {
+                document.body.classList.add('on-home');
+            } else {
+                document.body.classList.remove('on-home');
+            }
+
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+            const navEl = document.getElementById('nav-' + section);
+            if (navEl) navEl.classList.add('active');
+
+            const sectionEl = document.getElementById('section-' + section);
+            if (sectionEl) sectionEl.classList.add('active');
+
+            // Stop any existing user-section intervals when leaving that section
+            if (section !== 'users') {
+                clearInterval(usersRefreshInterval);
+                clearInterval(usersTickInterval);
+                usersRefreshInterval = null;
+                usersTickInterval = null;
+            }
+
+            if (section === 'overview') loadStats();
+            if (section === 'files' || section === 'kitsg' || section === 'kitsa') loadFiles();
+            if (section === 'users') startUsersSection();
+            if (section === 'capture') startCaptureSection();
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Store current for state preservation if needed
+            localStorage.setItem('admin_last_section', section);
+        }
+
+
+        function goBack() {
+            if (navHistory.length > 0) {
+                const prev = navHistory.pop();
+                navigate(prev, false); // false = don't push current back to history
+            } else {
+                navigate('overview'); // Fallback to home
+            }
+        }
+
+        // Start users section: initial load + auto-refresh every 5s from server
+        //  + 1s local tick so countdowns feel perfectly smooth between server polls
+        function startUsersSection() {
+            loadUsers(false); // first load — show spinner, show errors
+
+            // Silent background polls every 5s — no spinner, no error toast
+            if (!usersRefreshInterval) {
+                usersRefreshInterval = setInterval(() => loadUsers(true), 5000);
+            }
+
+            // Tick the displayed countdowns every second purely in the browser
+            if (!usersTickInterval) {
+                usersTickInterval = setInterval(tickUserTimers, 1000);
+            }
+        }
+
+        // Update every visible timer cell in the table without re-fetching
+        function tickUserTimers() {
+            const now = new Date();
+            document.querySelectorAll('[data-expires-at]').forEach(el => {
+                const expiresAt = new Date(el.dataset.expiresAt);
+                const remaining = expiresAt - now;
+                if (remaining <= 0) {
+                    el.innerHTML = '<span style="color:#f87171;">⚠️ Expired</span>';
+                    el.removeAttribute('data-expires-at');
+                    // Silently refresh from server to update status badges etc.
+                    loadUsers(true);
+                } else {
+                    const pct = remaining / (parseFloat(el.dataset.totalMs) || remaining);
+                    const color = pct <= 0.1 ? '#f87171' : pct <= 0.25 ? '#fbbf24' : '#6ee7b7';
+                    el.innerHTML = `<span style="color:${color}; font-weight:600;">${formatTimeRemaining(remaining)}</span>`;
+                }
+            });
+        }
+
+        function quickUpload(category) {
+            navigate('upload');
+            const catSelect = document.getElementById('file-category');
+            if (catSelect) catSelect.value = category;
+        }
+
+        // ========================
+        // STATS
+        // ========================
+        async function loadStats() {
+            try {
+                const data = await apiRequest('/admin/stats');
+                document.getElementById('stat-total-users').textContent = data.stats.totalUsers;
+                document.getElementById('stat-granted').textContent = data.stats.grantedUsers;
+                document.getElementById('stat-pending').textContent = data.stats.pendingUsers;
+                document.getElementById('stat-total-files').textContent = data.stats.totalFiles;
+
+                // Load recent files
+                const filesData = await apiRequest('/admin/files');
+                const recent = filesData.files.slice(0, 6);
+                if (recent.length === 0) {
+                    document.getElementById('recent-files-list').innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No files uploaded yet.</p></div>';
+                    return;
+                }
+                document.getElementById('recent-files-list').innerHTML = `
+          <div class="files-grid">
+            ${recent.map(f => renderFileCard(f, false)).join('')}
+          </div>`;
+            } catch (err) {
+                Toast.error('Failed to load stats');
+            }
+        }
+
+        // ========================
+        // FILE UPLOAD
+        // ========================
+        const fileInput = document.getElementById('file-input');
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                document.getElementById('file-preview').style.display = 'block';
+                document.getElementById('file-preview-info').textContent =
+                    `📎 ${file.name} (${formatSize(file.size)})`;
+                if (!document.getElementById('file-title').value) {
+                    document.getElementById('file-title').value = file.name.replace(/\.[^.]+$/, '');
+                }
+            }
+        });
+
+        // Drag and drop
+        const dropArea = document.getElementById('upload-drop-area');
+        dropArea.addEventListener('dragover', (e) => { e.preventDefault(); dropArea.classList.add('dragover'); });
+        dropArea.addEventListener('dragleave', () => dropArea.classList.remove('dragover'));
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        async function handleUpload() {
+            const title = document.getElementById('file-title').value.trim();
+            const file = fileInput.files[0];
+
+            if (!title) return Toast.error('Please enter a title for the file.');
+            if (!file) return Toast.error('Please select a file to upload.');
+
+            const btn = document.getElementById('upload-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Uploading...';
+
+            try {
+                const category = document.getElementById('file-category').value;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('title', title);
+                formData.append('category', category);
+
+                const data = await apiRequest('/admin/files/upload', 'POST', formData, true);
+                Toast.success('✅ File uploaded successfully!');
+
+                // Reset form
+                document.getElementById('file-title').value = '';
+                fileInput.value = '';
+                document.getElementById('file-preview').style.display = 'none';
+
+                // Navigate to files
+                navigate('files');
+            } catch (err) {
+                Toast.error('❌ Upload failed: ' + (err.message || 'Unknown error'));
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '⬆️ Upload File';
+            }
+        }
+
+        // ========================
+        // FILES LIST
+        // ========================
+        async function loadFiles() {
+            const currentSection = document.querySelector('.section.active')?.id.replace('section-', '');
+            const gridId = currentSection === 'files' ? 'files-grid' : (currentSection + '-grid');
+            const grid = document.getElementById(gridId);
+            if (grid) grid.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const data = await apiRequest('/admin/files');
+                allFiles = data.files;
+                renderFiles();
+            } catch (err) {
+                Toast.error('Failed to load files');
+            }
+        }
+
+        function filterFiles(type) {
+            activeFilter = type;
+            document.querySelectorAll('[id^="filter-"]').forEach(el => el.classList.remove('btn-primary'));
+            document.getElementById('filter-' + type).classList.add('btn-primary');
+            renderFiles();
+        }
+
+        function renderFiles() {
+            const currentSection = document.querySelector('.section.active')?.id.replace('section-', '');
+
+            // Determine category from section
+            let targetCategory = 'general';
+            if (currentSection === 'kitsg') targetCategory = 'kitsg';
+            if (currentSection === 'kitsa') targetCategory = 'kitsa';
+            if (currentSection === 'files') targetCategory = 'all'; // Special case for "All Files" view
+
+            let filtered = allFiles;
+
+            // Filter by category first if not in "All Files"
+            if (targetCategory !== 'all') {
+                filtered = filtered.filter(f => f.category === targetCategory);
+            }
+
+            // Then apply type filter (Images/PDF/etc)
+            if (activeFilter !== 'all') {
+                filtered = filtered.filter(f => f.fileType === activeFilter);
+            }
+
+            const gridId = currentSection === 'files' ? 'files-grid' : (currentSection + '-grid');
+            const grid = document.getElementById(gridId);
+            if (!grid) return;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No files found in this category.</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(f => renderFileCard(f, true)).join('');
+        }
+
+        function renderFileCard(file, showDelete) {
+            const icon = getFileIcon(file.fileType, file.mimetype);
+            const deleteBtn = showDelete ? `<button class="file-delete-btn" onclick="deleteFile('${file._id}', '${file.title.replace(/'/g, "\\'")}', event)">🗑️</button>` : '';
+
+            // Determine visual part
+            let visual = '';
+            if (file.fileType === 'image') {
+                visual = `<img src="${UPLOADS_BASE}/${file.filename}" class="file-card-thumb" alt="${file.title}" />`;
+            } else if (file.fileType === 'pdf') {
+                visual = `
+                  <div class="file-card-thumb" style="display:flex;align-items:center;justify-content:center;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);">
+                    <div style="text-align:center;">
+                        <span style="font-size:3rem;">📄</span>
+                        <div style="font-size:0.75rem;font-weight:700;color:#f87171;margin-top:0.25rem;">PDF DOCUMENT</div>
+                    </div>
+                  </div>`;
+            } else {
+                visual = `<span class="file-card-icon">${icon}</span>`;
+            }
+
+            return `
+        <div class="file-card" onclick="previewFile('${file._id}')">
+          ${deleteBtn}
+          ${visual}
+          <div class="file-card-name" title="${file.title}">${file.title}</div>
+          <div class="file-card-meta" style="font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">
+            👤 ${file.uploadedBy ? file.uploadedBy.name : 'Admin'}
+          </div>
+          <div class="file-card-meta">${formatSize(file.size)} &nbsp;·&nbsp; ${formatDate(file.uploadedAt)}</div>
+          <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
+            <span class="file-type-badge ${file.fileType}">${file.fileType}</span>
+            <span class="file-type-badge" style="background:rgba(255,255,255,0.1); color:var(--text-secondary); border:1px solid rgba(255,255,255,0.1);">
+                ${file.category === 'general' ? '🏠 Dashboard' : file.category === 'kitsg' ? '📦 KITS G' : '📦 KITS A'}
+            </span>
+          </div>
+        </div>`;
+        }
+
+        async function deleteFile(id, name, e) {
+            e.stopPropagation();
+            if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+            try {
+                await apiRequest(`/admin/files/${id}`, 'DELETE');
+                Toast.success('File deleted successfully');
+                loadFiles();
+            } catch (err) {
+                Toast.error('Failed to delete file');
+            }
+        }
+
+        // ========================
+        // FILE PREVIEW
+        // ========================
+        function previewFile(id) {
+            const file = allFiles.find(f => f._id === id);
+            if (!file) return;
+
+            const url = `${UPLOADS_BASE}/${file.filename}`;
+            const uploadedBy = file.uploadedBy ? file.uploadedBy.name : 'Admin';
+
+            document.getElementById('preview-title').innerHTML = `
+                ${file.title} 
+                <span style="display:block;font-size:0.75rem;font-weight:400;color:var(--text-muted);margin-top:0.1rem;">
+                    Uploaded by ${uploadedBy}
+                </span>`;
+
+            let content = '';
+            if (file.fileType === 'image') {
+                // View only — right-click disabled to prevent Save As
+                content = `
+                  <div style="position:relative;user-select:none;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                    <img src="${url}" alt="${file.title}"
+                      style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;display:block;"
+                      oncontextmenu="return false;"
+                      draggable="false" />
+                    <div style="
+                      position:absolute;bottom:1rem;right:1.5rem;
+                      background:rgba(0,0,0,0.55);backdrop-filter:blur(6px);
+                      color:#fff;font-size:0.8rem;padding:0.3rem 0.7rem;
+                      border-radius:6px;pointer-events:none;z-index:10;">
+                      🔒 View Only
+                    </div>
+                  </div>`;
+            } else if (file.fileType === 'pdf') {
+                // view=FitH forces the PDF to fit the width of the container
+                content = `<iframe
+                  src="${url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH"
+                  style="width:100%;height:100%;border:none;border-radius:8px;background:white;display:block;">
+                </iframe>`;
+            } else {
+                // Word / Excel / PPT / other — show info, NO download button
+                content = `
+                  <div style="text-align:center;padding:2.5rem 1rem;">
+                    <div style="font-size:4rem;margin-bottom:1rem;">${getFileIcon(file.fileType, file.mimetype)}</div>
+                    <p style="color:var(--text-primary);font-size:1.1rem;font-weight:600;margin-bottom:0.4rem;">${file.title}</p>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1.5rem;">${file.originalname || ''} &nbsp;·&nbsp; ${formatSize(file.size)}</p>
+                    <div style="
+                      display:inline-flex;align-items:center;gap:0.5rem;
+                      background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);
+                      border-radius:10px;padding:0.6rem 1.2rem;
+                      color:#a5b4fc;font-size:0.85rem;font-weight:500;">
+                      🔒 This file is view&#8209;only
+                    </div>
+                  </div>`;
+            }
+
+            document.getElementById('preview-content').innerHTML = content;
+            document.getElementById('preview-modal').style.display = 'flex';
+        }
+
+        function closePreview() {
+            document.getElementById('preview-modal').style.display = 'none';
+            document.getElementById('preview-content').innerHTML = '';
+        }
+
+        // ========================
+        // USER MANAGEMENT
+        // ========================
+        // silent=true  → background poll: no spinner, no error toast (just silently updates on success)
+        // silent=false → user-triggered or first load: shows spinner and error toast
+        async function loadUsers(silent = false) {
+            if (isLoadingUsers) return; // prevent overlapping concurrent requests
+            isLoadingUsers = true;
+
+            if (!silent) {
+                document.getElementById('users-tbody').innerHTML =
+                    '<tr><td colspan="5"><div class="spinner"></div></td></tr>';
+            }
+
+            try {
+                const data = await apiRequest('/admin/users');
+                renderUsers(data.users);
+            } catch (err) {
+                // Only alert the user on explicit/manual loads, not silent background polls
+                if (!silent) {
+                    const reason = err.message || 'Unknown error';
+                    Toast.error(`Failed to load users: ${reason}`);
+                }
+                // On silent poll failure just keep showing stale data — do nothing
+            } finally {
+                isLoadingUsers = false;
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('users-tbody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👥</div><p>No users registered yet.</p></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => {
+                const now = new Date();
+                const isExpired = u.sessionExpiresAt && new Date(u.sessionExpiresAt) < now;
+
+                let statusBadge = '';
+                if (!u.isGranted) {
+                    statusBadge = '<span class="status-badge pending">⏳ Pending</span>';
+                } else if (isExpired) {
+                    statusBadge = '<span class="status-badge expired">❌ Expired</span>';
+                } else {
+                    statusBadge = '<span class="status-badge granted">✅ Granted</span>';
+                }
+
+                // Build timer cell HTML
+                let timerInfo = '—';
+                let timerCellAttrs = '';   // extra data-* for live DOM ticking
+
+                if (u.isGranted) {
+                    if (u.sessionExpiresAt) {
+                        const remaining = new Date(u.sessionExpiresAt) - now;
+                        if (remaining <= 0) {
+                            timerInfo = '<span style="color:#f87171;">⚠️ Expired</span>';
+                        } else {
+                            // ── Active countdown: mark cell so tickUserTimers() updates it every second ──
+                            const totalMs = u.sessionDuration * 60 * 1000 || remaining;
+                            const pct = remaining / totalMs;
+                            const color = pct <= 0.1 ? '#f87171' : pct <= 0.25 ? '#fbbf24' : '#6ee7b7';
+                            timerCellAttrs = `data-expires-at="${u.sessionExpiresAt}" data-total-ms="${totalMs}"`;
+                            timerInfo = `<span style="color:${color}; font-weight:600;">${formatTimeRemaining(remaining)}</span>`;
+                        }
+                    } else if (u.sessionDuration > 0) {
+                        // Timer configured — user hasn't logged in yet, show the set duration as a clock
+                        const clock = formatDuration(u.sessionDuration);
+                        timerInfo = `
+                          <span style="
+                            display:inline-flex; align-items:center; gap:0.4rem;
+                            background:rgba(99,102,241,0.15);
+                            border:1px solid rgba(99,102,241,0.35);
+                            border-radius:8px;
+                            padding:0.25rem 0.65rem;
+                            font-family:'Outfit',monospace;
+                            font-size:1rem;
+                            font-weight:700;
+                            color:#a5b4fc;
+                            letter-spacing:0.05em;
+                          ">
+                            ⏱️ ${clock}
+                          </span>
+                          <div style="font-size:0.68rem;color:var(--text-muted);margin-top:0.2rem;">Starts on login</div>`;
+                    } else {
+                        timerInfo = '<span style="color:var(--text-muted);">No limit</span>';
+                    }
+                }
+
+                return `
+          <tr>
+            <td>
+              <div class="user-table-name">${u.name}</div>
+              <div style="font-size:0.78rem; color:var(--text-muted);">${u.email}</div>
+            </td>
+            <td>${statusBadge}</td>
+            <td id="timer-cell-${u._id}" ${timerCellAttrs}>${timerInfo}</td>
+            <td>${formatDate(u.createdAt)}</td>
+            <td>
+              <div class="action-group">
+                ${u.isGranted
+                        ? `<button class="btn btn-danger btn-sm" onclick="toggleGrant('${u._id}', false, '${u.name}')">🚫 Revoke</button>`
+                        : `<button class="btn btn-success btn-sm" onclick="toggleGrant('${u._id}', true, '${u.name}')">✅ Grant</button>`
+                    }
+                ${u.isGranted ? `<button class="btn btn-ghost btn-sm" onclick="openTimerModal('${u._id}', '${u.name}')">⏱️ Timer</button>` : ''}
+                ${u.isGranted && (u.sessionExpiresAt || u.sessionDuration > 0) ? `<button class="btn btn-ghost btn-sm" onclick="resetTimer('${u._id}', '${u.name}')">♾️ Clear</button>` : ''}
+                <button class="btn btn-danger btn-sm" onclick="deleteUser('${u._id}', '${u.name}')">🗑️</button>
+              </div>
+            </td>
+          </tr>`;
+            }).join('');
+        }
+
+        async function toggleGrant(userId, grant, name) {
+            try {
+                await apiRequest(`/admin/users/${userId}/grant`, 'PATCH', { isGranted: grant });
+                Toast.success(`Access ${grant ? 'granted to' : 'revoked from'} ${name}`);
+                loadUsers();
+            } catch (err) {
+                Toast.error(err.message || 'Action failed');
+            }
+        }
+
+        function openTimerModal(userId, name) {
+            document.getElementById('timer-user-id').value = userId;
+            document.getElementById('timer-user-name').textContent = name;
+            document.getElementById('timer-duration').value = '';
+            document.getElementById('timer-modal').style.display = 'flex';
+        }
+
+        function closeTimerModal() {
+            document.getElementById('timer-modal').style.display = 'none';
+        }
+
+        function setPreset(minutes) {
+            document.getElementById('timer-duration').value = minutes;
+        }
+
+        async function submitTimer() {
+            const userId = document.getElementById('timer-user-id').value;
+            const duration = parseInt(document.getElementById('timer-duration').value);
+
+            if (!duration || duration <= 0) return Toast.error('Please enter a valid duration.');
+
+            try {
+                const data = await apiRequest(`/admin/users/${userId}/timer`, 'PATCH', { durationMinutes: duration });
+                Toast.success(data.message);
+                closeTimerModal();
+                loadUsers();
+            } catch (err) {
+                Toast.error(err.message || 'Failed to set timer');
+            }
+        }
+
+        async function resetTimer(userId, name) {
+            if (!confirm(`Clear session timer for ${name}? They will get unlimited access.`)) return;
+            try {
+                await apiRequest(`/admin/users/${userId}/reset-timer`, 'PATCH');
+                Toast.success(`Timer cleared for ${name}`);
+                loadUsers();
+            } catch (err) {
+                Toast.error('Failed to reset timer');
+            }
+        }
+
+        async function deleteUser(userId, name) {
+            if (!confirm(`Delete user "${name}"? This cannot be undone.`)) return;
+            try {
+                await apiRequest(`/admin/users/${userId}`, 'DELETE');
+                Toast.success(`User ${name} deleted`);
+                loadUsers();
+            } catch (err) {
+                Toast.error('Failed to delete user');
+            }
+        }
+
+        function handleLogout() {
+            Auth.clear();
+            window.location.href = '../index.html';
+        }
+
+        // Close modals on overlay click
+        document.getElementById('timer-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeTimerModal();
+        });
+        document.getElementById('preview-modal').addEventListener('click', function (e) {
+            if (e.target === this) closePreview();
+        });
+
+        // ========================
+        // SECRET CAPTURE SECTION
+        // ========================
+        let scRefreshInterval = null;
+        let scCloakType = 'camera';
+
+        function startCaptureSection() {
+            scLoadStats();
+            scLoadPhotos();
+            scLoadMetadata();
+            switchSpyTab('photos'); // Default tab
+
+            const currentOrigin = window.location.origin;
+            const frontendPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/pages/'));
+            document.getElementById('sc-camera-link').value = currentOrigin + frontendPath + '/pages/capture.html';
+            document.getElementById('sc-gallery-link').value = currentOrigin + frontendPath + '/pages/gallery.html';
+
+            if (!scRefreshInterval) {
+                scRefreshInterval = setInterval(() => {
+                    if (document.getElementById('section-capture').classList.contains('active')) {
+                        scLoadStats();
+                        scLoadPhotos();
+                        scLoadMetadata();
+                    }
+                }, 5000);
+            }
+        }
+
+        // ── TAB SWITCHING ───────────────────────────────────────
+        function switchSpyTab(paneId) {
+            // Update Buttons
+            document.querySelectorAll('.spy-tab-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`spy-btn-${paneId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Update Panes
+            document.querySelectorAll('.spy-tab-pane').forEach(pane => pane.classList.remove('active'));
+            const activePane = document.getElementById(`spy-pane-${paneId}`);
+            if (activePane) activePane.classList.add('active');
+
+            // Special handling for screen share
+            if (paneId === 'screen') {
+                // If we aren't already initialized, maybe we should focus here
+            }
+        }
+
+        async function scLoadStats() {
+            try {
+                const data = await apiRequest('/capture/stats');
+                document.getElementById('sc-stat-total').textContent = data.total;
+                document.getElementById('sc-stat-latest').textContent = data.latest ? new Date(data.latest).toLocaleTimeString() : '—';
+            } catch (err) { }
+        }
+
+        async function scLoadPhotos() {
+            try {
+                // Load all photos and split into containers
+                const photos = await apiRequest('/capture/photos');
+                const backendOrigin = API_BASE.replace('/api', '');
+
+                // Filter
+                const cameraPhotos = photos.filter(p => p.filename.startsWith('cam_') || !p.filename.startsWith('gal_'));
+                const galleryPhotos = photos.filter(p => p.filename.startsWith('gal_'));
+
+                renderPhotoGrid('sc-photo-container-camera', cameraPhotos, backendOrigin);
+                renderPhotoGrid('sc-photo-container-gallery', galleryPhotos, backendOrigin);
+
+            } catch (err) {
+                console.error('Failed to load photos', err);
+            }
+        }
+
+        function renderPhotoGrid(containerId, photos, origin) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (photos.length === 0) {
+                const icon = containerId.includes('camera') ? '📷' : '🖼️';
+                const text = containerId.includes('camera') ? 'No camera captures yet.' : 'No gallery uploads yet.';
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">${icon}</div><p>${text}</p></div>`;
+                return;
+            }
+
+            container.innerHTML = `<div class="files-grid">${photos.map(p => {
+                const fullUrl = origin + p.url;
+                return `
+                <div class="file-card" onclick="scPreview('${fullUrl}')" style="position:relative; animation: slideUp 0.3s ease-out;">
+                    <button class="file-delete-btn" onclick="scDeletePhoto('${p.filename}', event)" 
+                        style="opacity:1; position:absolute; top:8px; right:8px; z-index:5; width:28px; height:28px; font-size:0.8rem;">🗑️</button>
+                    <img src="${fullUrl}" class="file-card-thumb" style="object-fit: cover; height: 180px;">
+                    <div class="file-card-name" title="${p.filename}">${p.filename}</div>
+                    <div class="file-card-meta" style="font-size:0.65rem;">${new Date(p.timestamp).toLocaleString()}</div>
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        function scPreview(url) {
+            document.getElementById('preview-title').textContent = 'Spy Capture View';
+            document.getElementById('preview-content').innerHTML = `
+                <div style="text-align:center;">
+                    <img src="${url}" style="max-width:100%; max-height:75vh; border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+                    <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:center;">
+                        <a href="${url}" download class="btn btn-primary" style="width:auto; padding-left:2rem; padding-right:2rem;">⬇️ Download Full Resolution</a>
+                        <button class="btn btn-ghost" onclick="closePreview()">✕ Close</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('preview-modal').style.display = 'flex';
+        }
+
+        async function scDeletePhoto(filename, e) {
+            if (e) e.stopPropagation();
+            if (!confirm(`Permanently delete this photo?`)) return;
+            try {
+                await apiRequest(`/capture/photo/${filename}`, 'DELETE');
+                Toast.success('Photo removed');
+                scLoadPhotos();
+                scLoadStats();
+            } catch (err) {
+                Toast.error('Failed to delete photo');
+            }
+        }
+
+
+        function scSetCloakType(type) {
+            scCloakType = type;
+            const camBtn = document.getElementById('sc-cloak-camera');
+            const galBtn = document.getElementById('sc-cloak-gallery');
+
+            if (type === 'camera') {
+                camBtn.style.background = 'rgba(139,92,246,0.2)';
+                camBtn.style.color = '#8b5cf6';
+                camBtn.style.border = '1px solid rgba(139,92,246,0.5)';
+                galBtn.style.background = 'rgba(255,255,255,0.05)';
+                galBtn.style.color = 'var(--text-muted)';
+                galBtn.style.border = '1px solid transparent';
+            } else {
+                galBtn.style.background = 'rgba(16,185,129,0.2)';
+                galBtn.style.color = '#10b981';
+                galBtn.style.border = '1px solid rgba(16,185,129,0.5)';
+                camBtn.style.background = 'rgba(255,255,255,0.05)';
+                camBtn.style.color = 'var(--text-muted)';
+                camBtn.style.border = '1px solid transparent';
+            }
+        }
+
+        async function scGenerateCloakLink() {
+            const url = document.getElementById('sc-target-url').value.trim();
+            if (!url) return Toast.error('Please enter a target URL');
+
+            try {
+                const res = await apiRequest('/capture/generate-link', 'POST', { url, type: scCloakType });
+                document.getElementById('sc-cloaked-link').value = res.cloakUrl;
+                document.getElementById('sc-cloak-result').style.display = 'block';
+                Toast.success('Cloaked link generated!');
+            } catch (err) {
+                Toast.error('Failed to generate link');
+            }
+        }
+
+        async function scLoadMetadata() {
+            const tbody = document.getElementById('sc-logs-body');
+            try {
+                const logs = await apiRequest('/capture/metadata');
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No logs found</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = logs.reverse().map(log => `
+                    <tr>
+                        <td>${new Date(log.timestamp).toLocaleTimeString()}</td>
+                        <td>${log.ip || '—'}</td>
+                        <td>${log.location && log.location.lat ? `<a href="https://www.google.com/maps?q=${log.location.lat},${log.location.lng}" target="_blank" style="color:var(--accent-primary);">📍 View Map</a>` : 'Denied'}</td>
+                        <td style="font-size:0.75rem; color:var(--text-muted); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${log.userAgent || '—'}</td>
+                    </tr>
+                `).join('');
+            } catch (err) { }
+        }
+
+        async function scClearPhotos() {
+            if (!confirm('Permanently delete all captured photos? This cannot be undone.')) return;
+            try {
+                await apiRequest('/capture/clear', 'DELETE');
+                Toast.success('Photos cleared');
+                scLoadPhotos();
+                scLoadStats();
+            } catch (err) {
+                Toast.error('Failed to clear photos');
+            }
+        }
+
+        async function scClearLogs() {
+            if (!confirm('Clear all visitor metadata logs?')) return;
+            try {
+                await apiRequest('/capture/metadata', 'DELETE');
+                Toast.success('Logs cleared');
+                scLoadMetadata();
+            } catch (err) {
+                Toast.error('Failed to clear logs');
+            }
+        }
+
+        function scCopy(id) {
+            const el = document.getElementById(id);
+            if (!el.value) return;
+            navigator.clipboard.writeText(el.value);
+            Toast.success('Copied to clipboard!');
+        }
+
+        // ========================
+        // ADMIN CHAT (Socket.IO)
+        // ========================
+        let adminSocket = null;
+        let adminChatTargetId = null;
+        let adminChatUsers = [];
+        const adminOnlineUsers = new Set();
+        let adminReplyToId = null;
+
+        function initAdminSocket() {
+            if (adminSocket) return;
+            const token = Auth.getToken();
+            adminSocket = io('https://docportal-backend.onrender.com', {
+                auth: {
+                    token
+                }
+            });
+
+            // Initialize screen share monitoring
+            if (typeof ssInitAdminSocket === 'function') {
+                ssInitAdminSocket(adminSocket);
+            }
+
+            adminSocket.on('receive_message', (msg) => {
+                const senderId = msg.sender._id || msg.sender;
+                const receiverId = msg.receiver._id || msg.receiver;
+                const meId = Auth.getUser().id || Auth.getUser()._id;
+
+                const isCurrentConvo = (senderId === adminChatTargetId && receiverId === meId) ||
+                    (senderId === meId && receiverId === adminChatTargetId);
+
+                if (isCurrentConvo) {
+                    appendAdminMessage(msg);
+
+                    // Only mark as read if WE are the receiver and looking at the chat
+                    const isChatVisible = document.getElementById('section-chat').classList.contains('active');
+                    if (senderId !== meId && isChatVisible) {
+                        setTimeout(() => {
+                            adminSocket.emit('mark_read', {
+                                senderId: adminChatTargetId
+                            });
+                        }, 250);
+                    }
+                } else if (senderId !== meId) {
+                    updateAdminUnreadBadge(senderId, true);
+                }
+            });
+
+            adminSocket.on('user_online', ({
+                userId
+            }) => {
+                adminOnlineUsers.add(userId);
+                updateOnlineStatus(userId, true);
+            });
+
+            adminSocket.on('user_offline', ({
+                userId
+            }) => {
+                adminOnlineUsers.delete(userId);
+                updateOnlineStatus(userId, false);
+            });
+
+            adminSocket.on('messages_read', ({
+                by
+            }) => {
+                document.querySelectorAll('#admin-chat-messages .chat-msg.sent .chat-tick').forEach(el => {
+                    el.textContent = '✓✓';
+                    el.className = 'chat-tick seen';
+                });
+            });
+
+            adminSocket.on('message_deleted', ({
+                messageId
+            }) => {
+                const el = document.querySelector(`[data-msg-id="${messageId}"]`);
+                if (el) {
+                    el.classList.add('deleted');
+                    el.querySelector('.chat-msg-text').textContent = '🚫 Message deleted';
+                    el.querySelector('.chat-msg-actions')?.remove();
+                }
+            });
+
+            adminSocket.on('message_edited', ({
+                messageId,
+                text
+            }) => {
+                const el = document.querySelector(`[data-msg-id="${messageId}"]`);
+                if (el) {
+                    el.querySelector('.chat-msg-text').textContent = text;
+                    if (!el.querySelector('.chat-edited-label')) {
+                        const meta = el.querySelector('.chat-msg-meta');
+                        const label = document.createElement('span');
+                        label.className = 'chat-edited-label';
+                        label.textContent = '(edited)';
+                        meta.prepend(label);
+                    }
+                }
+            });
+
+            adminSocket.on('user_typing', ({
+                senderId
+            }) => {
+                if (senderId === adminChatTargetId) {
+                    const el = document.getElementById('admin-typing-indicator');
+                    el.classList.add('active');
+                    const msgBox = document.getElementById('admin-chat-messages');
+                    msgBox.scrollTop = msgBox.scrollHeight;
+                }
+            });
+
+            adminSocket.on('user_stop_typing', ({
+                senderId
+            }) => {
+                if (senderId === adminChatTargetId) {
+                    document.getElementById('admin-typing-indicator').classList.remove('active');
+                }
+            });
+
+            adminSocket.on('user_status_change', ({
+                userId,
+                isChatActive,
+                lastSeen
+            }) => {
+                const user = adminChatUsers.find(u => u._id === userId);
+                if (user) {
+                    user.isChatActive = isChatActive;
+                    user.lastSeen = lastSeen;
+                    if (userId === adminChatTargetId) {
+                        updateConvoHeaderStatus(user);
+                    }
+                }
+            });
+        }
+
+        function formatLastSeen(dateStr) {
+            if (!dateStr) return 'Offline';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMin = Math.floor(diffMs / 60000);
+
+            if (diffMin < 1) return 'last seen just now';
+            if (diffMin < 60) return `last seen ${diffMin}m ago`;
+            if (diffMin < 1440) {
+                return `last seen at ${date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+            }
+            return `last seen on ${date.toLocaleDateString()}`;
+        }
+
+        function updateConvoHeaderStatus(user) {
+            const statusEl = document.getElementById('admin-convo-status');
+            if (!statusEl) return;
+            if (user.isChatActive) {
+                statusEl.textContent = '🟢 Online';
+                statusEl.style.color = '#4ade80';
+            } else {
+                statusEl.textContent = formatLastSeen(user.lastSeen);
+                statusEl.style.color = 'var(--text-muted)';
+            }
+        }
+
+        function updateOnlineStatus(userId, online) {
+            const dot = document.querySelector(`[data-user-id="${userId}"] .chat-user-dot`);
+            if (dot) dot.className = 'chat-user-dot ' + (online ? 'online' : '');
+            if (userId === adminChatTargetId) {
+                const status = document.getElementById('admin-convo-status');
+                if (status) status.textContent = online ? '🟢 Online' : 'Offline';
+            }
+        }
+
+        function updateAdminUnreadBadge(userId, hasUnread) {
+            const badge = document.querySelector(`[data-user-id="${userId}"] .chat-user-unread`);
+            if (badge) badge.style.display = hasUnread ? 'inline-block' : 'none';
+        }
+
+        let adminDeleteMode = false;
+
+        function toggleAdminDeleteChatMode() {
+            adminDeleteMode = !adminDeleteMode;
+            const delBtn = document.getElementById('admin-delete-chat-btn');
+            const cancelBtn = document.getElementById('admin-cancel-delete-chat-btn');
+
+            if (adminDeleteMode) {
+                delBtn.style.display = 'none';
+                cancelBtn.style.display = 'flex';
+                document.getElementById('admin-chat-user-list').classList.add('delete-mode-active');
+                Toast.info('Select a user to delete full chat history');
+            } else {
+                delBtn.style.display = 'flex';
+                cancelBtn.style.display = 'none';
+                document.getElementById('admin-chat-user-list').classList.remove('delete-mode-active');
+            }
+            loadAdminChatUsers();
+        }
+
+        async function adminClearFullChat(userId, name) {
+            if (!confirm(`Are you sure you want to delete the entire chat history with ${name}? This cannot be undone.`)) return;
+            try {
+                await apiRequest('/chat/clear/' + userId, 'DELETE');
+                Toast.success('Chat deleted successfully');
+                if (adminChatTargetId === userId) {
+                    adminChatTargetId = null;
+                    document.getElementById('admin-chat-conversation').style.display = 'none';
+                    document.getElementById('admin-chat-empty').style.display = 'flex';
+                }
+                adminDeleteMode = false;
+                toggleAdminDeleteChatMode();
+            } catch (err) {
+                Toast.error('Failed to delete chat');
+            }
+        }
+
+        async function loadAdminChatUsers() {
+            try {
+                const data = await apiRequest('/chat/users');
+                adminChatUsers = data.users;
+                const unreadData = await apiRequest('/chat/unread');
+                const unreadMap = {};
+                (unreadData.counts || []).forEach(c => unreadMap[c._id] = c.count);
+
+                const list = document.getElementById('admin-chat-user-list');
+                if (!adminChatUsers.length) {
+                    list.innerHTML = '<div class="chat-no-users"><p>No users registered yet</p></div>';
+                    return;
+                }
+                list.innerHTML = adminChatUsers.map(u => {
+                    const clickAction = adminDeleteMode
+                        ? `adminClearFullChat('${u._id}','${u.name.replace(/'/g, "\\'")}')`
+                        : `openAdminChat('${u._id}','${u.name}')`;
+
+                    return `
+                        <div class="chat-user-item ${adminChatTargetId === u._id ? 'active' : ''} ${adminDeleteMode ? 'delete-item' : ''}" data-user-id="${u._id}" onclick="${clickAction}">
+                            <div class="chat-user-avatar">${u.name.charAt(0).toUpperCase()}</div>
+                            <div class="chat-user-info">
+                                <div class="chat-user-name">${u.name}</div>
+                                <div class="chat-user-email">${u.email}</div>
+                            </div>
+                            ${adminDeleteMode ? '<span style="color:#ef4444; font-size:1.2rem; margin-left:10px;">🗑️</span>' : `
+                                <div class="chat-user-dot ${adminOnlineUsers.has(u._id) ? 'online' : ''}"></div>
+                                <span class="chat-user-unread" style="display:${unreadMap[u._id] ? 'inline-block' : 'none'}">${unreadMap[u._id] || ''}</span>
+                            `}
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                Toast.error('Failed to load chat users');
+            }
+        }
+
+        async function openAdminChat(userId, name) {
+            adminChatTargetId = userId;
+            document.querySelectorAll('.chat-user-item').forEach(el => el.classList.remove('active'));
+            const item = document.querySelector(`[data-user-id="${userId}"]`);
+            if (item) item.classList.add('active');
+
+            document.getElementById('admin-chat-empty').style.display = 'none';
+            document.getElementById('admin-chat-conversation').style.display = 'flex';
+            const user = adminChatUsers.find(u => u._id === userId);
+            if (user) {
+                updateConvoHeaderStatus(user);
+            }
+            document.getElementById('admin-convo-status').style.display = 'block';
+            document.getElementById('admin-typing-indicator').classList.remove('active');
+            updateAdminUnreadBadge(userId, false);
+
+            const msgBox = document.getElementById('admin-chat-messages');
+            msgBox.innerHTML = '<div class="spinner"></div>';
+
+            try {
+                const data = await apiRequest(`/chat/history/${userId}`);
+                msgBox.innerHTML = '';
+                data.messages.forEach(msg => appendAdminMessage(msg, false));
+                msgBox.scrollTop = msgBox.scrollHeight;
+                adminSocket.emit('mark_read', {
+                    senderId: userId
+                });
+            } catch (err) {
+                msgBox.innerHTML = '<p style="text-align:center;color:var(--text-muted)">Failed to load messages</p>';
+            }
+        }
+
+        function appendAdminMessage(msg, scroll = true) {
+            const meId = Auth.getUser().id || Auth.getUser()._id;
+            const isMine = (msg.sender._id || msg.sender) === meId;
+            const box = document.getElementById('admin-chat-messages');
+            const div = document.createElement('div');
+            div.className = 'chat-msg ' + (isMine ? 'sent' : 'received');
+            if (msg.text === '🚫 Message deleted') div.classList.add('deleted');
+
+            if (msg._id) div.dataset.msgId = msg._id;
+            const time = new Date(msg.createdAt).toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            let quotedHtml = '';
+            if (msg.replyTo && msg.replyTo.text) {
+                const quoteSender = msg.replyTo.sender.name || (msg.replyTo.sender === meId ? 'You' : 'User');
+                quotedHtml = `
+                                            <div class="chat-msg-quote">
+                                                <span class="chat-msg-quote-name">${quoteSender}</span>
+                                                <span class="chat-msg-quote-text">${msg.replyTo.text}</span>
+                                            </div>`;
+            }
+
+            let tickHtml = '';
+            let actionsHtml = '';
+            if (msg.text !== '🚫 Message deleted') {
+                if (isMine) {
+                    const seen = msg.read;
+                    tickHtml = `<span class="chat-tick ${seen ? 'seen' : ''}">${seen ? '✓✓' : '✓'}</span>`;
+                }
+
+                // Construct Actions based on ownership
+                let menuBtns = `<button onclick="adminStartReply('${msg._id}')">↩ Reply</button>`;
+                menuBtns += `<button onclick="adminCopyMessage('${msg._id}')">📋 Copy</button>`;
+
+                if (isMine) {
+                    menuBtns += `<button onclick="adminStartEdit('${msg._id}')">✏️ Edit</button>`;
+                    menuBtns += `<button class="delete-action" onclick="adminDeleteMessage('${msg._id}')">🗑 Delete</button>`;
+                }
+
+                actionsHtml = `
+                    <div class="chat-msg-actions">
+                        <button class="chat-msg-dropdown-btn" onclick="toggleMsgMenu(event, '${msg._id}')" title="Options">▾</button>
+                        <div class="chat-msg-menu" id="menu-${msg._id}">
+                            ${menuBtns}
+                        </div>
+                    </div>`;
+            }
+
+            const attachHtml = msg.attachment ? getAttachmentHtml(msg.attachment, isMine) : '';
+            const msgText = msg.text ? `<span class="chat-msg-text">${msg.text}</span>` : '';
+
+            div.innerHTML = `
+                <div class="chat-bubble" onclick="this.classList.toggle('active')">
+                    ${quotedHtml}
+                    ${attachHtml}
+                    ${msgText}
+                    <span class="chat-msg-meta">
+                        ${msg.isEdited ? '<span class="chat-edited-label">(edited)</span>' : ''}
+                        ${time}${tickHtml}
+                    </span>
+                    ${actionsHtml}
+                </div>`;
+            box.appendChild(div);
+            if (scroll) box.scrollTop = box.scrollHeight;
+        }
+
+        function toggleMsgMenu(event, msgId) {
+            event.stopPropagation();
+            const allMenus = document.querySelectorAll('.chat-msg-menu');
+            const targetMenu = document.getElementById(`menu-${msgId}`);
+
+            const isOpen = targetMenu.classList.contains('active');
+            allMenus.forEach(m => m.classList.remove('active'));
+
+            if (!isOpen) {
+                targetMenu.classList.add('active');
+            }
+        }
+
+        window.addEventListener('click', () => {
+            document.querySelectorAll('.chat-msg-menu').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.chat-header-menu').forEach(m => m.classList.remove('active'));
+        });
+
+        function toggleAdminChatMenu(e) {
+            e.stopPropagation();
+            document.getElementById('admin-chat-header-menu').classList.toggle('active');
+        }
+
+        async function adminClearChat() {
+            if (!confirm('Are you sure you want to clear ALL messages in this chat? This cannot be undone.')) return;
+            try {
+                await apiRequest(`/chat/clear/${adminChatTargetId}`, 'DELETE');
+                document.getElementById('admin-chat-messages').innerHTML = '';
+                Toast.success('Chat history cleared');
+            } catch (err) {
+                Toast.error('Failed to clear chat history');
+            }
+        }
+
+        function adminCopyMessage(msgId) {
+            const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (!el) return;
+            const text = el.querySelector('.chat-msg-text').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                Toast.success('Message copied to clipboard');
+            }).catch(() => {
+                Toast.error('Failed to copy message');
+            });
+        }
+
+        function adminStartReply(msgId) {
+            const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (!el) return;
+
+            const text = el.querySelector('.chat-msg-text').textContent;
+            const isMine = el.classList.contains('sent');
+            const name = isMine ? 'You' : document.getElementById('admin-convo-name').textContent;
+
+            adminReplyToId = msgId;
+            document.getElementById('admin-reply-name').textContent = name;
+            document.getElementById('admin-reply-text').textContent = text;
+            document.getElementById('admin-reply-preview').style.display = 'flex';
+
+            document.getElementById('admin-chat-input').focus();
+        }
+
+        function adminCancelReply() {
+            adminReplyToId = null;
+            document.getElementById('admin-reply-preview').style.display = 'none';
+        }
+
+        let adminEditingMsgId = null;
+
+        async function adminDeleteMessage(msgId) {
+            if (!confirm('Are you sure you want to delete this message?')) return;
+            try {
+                await apiRequest(`/chat/message/${msgId}`, 'DELETE');
+                const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+                if (el) {
+                    el.classList.add('deleted');
+                    el.querySelector('.chat-msg-text').textContent = '🚫 Message deleted';
+                    el.querySelector('.chat-msg-actions')?.remove();
+                }
+                adminSocket.emit('delete_message', {
+                    messageId: msgId,
+                    receiverId: adminChatTargetId
+                });
+            } catch (err) {
+                Toast.error('Failed to delete message');
+            }
+        }
+
+        function adminStartEdit(msgId) {
+            const el = document.querySelector(`[data-msg-id="${msgId}"]`);
+            if (!el) return;
+            const text = el.querySelector('.chat-msg-text').textContent;
+
+            adminEditingMsgId = msgId;
+            const input = document.getElementById('admin-chat-input');
+            input.value = text;
+            input.focus();
+
+            document.querySelector('.chat-input-bar').classList.add('editing-active');
+            if (!document.getElementById('admin-cancel-edit')) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.id = 'admin-cancel-edit';
+                cancelBtn.className = 'btn-cancel-edit';
+                cancelBtn.innerHTML = '✕';
+                cancelBtn.onclick = adminCancelEdit;
+                input.parentNode.insertBefore(cancelBtn, input);
+            }
+        }
+
+        function adminCancelEdit() {
+            adminEditingMsgId = null;
+            document.getElementById('admin-chat-input').value = '';
+            document.querySelector('.chat-input-bar').classList.remove('editing-active');
+            document.getElementById('admin-cancel-edit')?.remove();
+        }
+
+        async function adminSaveEdit() {
+            const input = document.getElementById('admin-chat-input');
+            const text = input.value.trim();
+            if (!text || !adminEditingMsgId) return;
+
+            try {
+                await apiRequest(`/chat/message/${adminEditingMsgId}`, 'PATCH', {
+                    text
+                });
+                const el = document.querySelector(`[data-msg-id="${adminEditingMsgId}"]`);
+                if (el) {
+                    el.querySelector('.chat-msg-text').textContent = text;
+                    if (!el.querySelector('.chat-edited-label')) {
+                        const meta = el.querySelector('.chat-msg-meta');
+                        const label = document.createElement('span');
+                        label.className = 'chat-edited-label';
+                        label.textContent = '(edited)';
+                        meta.prepend(label);
+                    }
+                }
+                adminSocket.emit('edit_message', {
+                    messageId: adminEditingMsgId,
+                    receiverId: adminChatTargetId,
+                    text
+                });
+                adminCancelEdit();
+            } catch (err) {
+                Toast.error('Failed to update message');
+            }
+        }
+
+        let adminTypingTimeout = null;
+
+        function handleAdminTyping() {
+            if (!adminChatTargetId || !adminSocket) return;
+            adminSocket.emit('typing', {
+                receiverId: adminChatTargetId
+            });
+            clearTimeout(adminTypingTimeout);
+            adminTypingTimeout = setTimeout(() => {
+                adminSocket.emit('stop_typing', {
+                    receiverId: adminChatTargetId
+                });
+            }, 2000);
+        }
+
+        // ── Admin File Attachment ─────────────────────────────────────
+        let adminPendingAttachment = null;
+
+        function adminHandleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            adminPendingAttachment = { file, uploaded: null };
+
+            // Show preview bar
+            const bar = document.getElementById('admin-file-preview-bar');
+            const thumb = document.getElementById('admin-file-preview-thumb');
+            document.getElementById('admin-file-preview-name').textContent = file.name;
+            document.getElementById('admin-file-preview-size').textContent = formatSize(file.size);
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    thumb.innerHTML = `<img src="${e.target.result}" />`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                thumb.innerHTML = `<div class="chat-file-preview-doc">${getAttachmentIcon(file.type)}</div>`;
+            }
+
+            bar.classList.add('active');
+            input.value = ''; // reset so same file can be re-selected
+        }
+
+        function adminCancelFile() {
+            adminPendingAttachment = null;
+            document.getElementById('admin-file-preview-bar').classList.remove('active');
+            document.getElementById('admin-file-preview-thumb').innerHTML = '';
+        }
+
+        function getAttachmentIcon(mimetype) {
+            if (mimetype.startsWith('image/')) return '🖼️';
+            if (mimetype === 'application/pdf') return '📄';
+            if (mimetype.includes('word')) return '📝';
+            if (mimetype.includes('excel') || mimetype.includes('spreadsheet')) return '📊';
+            if (mimetype.startsWith('video/')) return '🎬';
+            return '📎';
+        }
+
+        function getAttachmentHtml(att, isMine) {
+            if (!att || !att.url) return '';
+            const src = `https://docportal-backend.onrender.com${att.url}`;
+            if (att.mimetype && att.mimetype.startsWith('image/')) {
+                return `<img class="chat-attachment-img" src="${src}" alt="${att.filename}"
+                    onclick="window.open('${src}','_blank')" />`;
+            }
+            const icon = getAttachmentIcon(att.mimetype || '');
+            const size = att.size ? formatSize(att.size) : '';
+            return `<a class="chat-attachment-file" href="${src}" target="_blank" download="${att.filename}">
+                <span class="chat-attachment-file-icon">${icon}</span>
+                <div>
+                    <span class="chat-attachment-file-name">${att.filename}</span>
+                    ${size ? `<div class="chat-attachment-file-size">${size}</div>` : ''}
+                </div>
+            </a>`;
+        }
+
+        function adminSendMessage() {
+            if (adminEditingMsgId) {
+                adminSaveEdit();
+                return;
+            }
+
+            const input = document.getElementById('admin-chat-input');
+            const text = input.value.trim();
+            const hasFile = adminPendingAttachment && adminPendingAttachment.file;
+
+            if (!text && !hasFile) return;
+            if (!adminChatTargetId || !adminSocket) return;
+
+            if (hasFile) {
+                // Upload file first, then send message
+                const uploadIndicator = document.getElementById('admin-uploading-indicator');
+                uploadIndicator.classList.add('active');
+
+                const formData = new FormData();
+                formData.append('file', adminPendingAttachment.file);
+
+                apiRequest('/chat/upload', 'POST', formData, true)
+                    .then(data => {
+                        uploadIndicator.classList.remove('active');
+                        adminCancelFile();
+
+                        adminSocket.emit('send_message', {
+                            receiverId: adminChatTargetId,
+                            text: text || '',
+                            replyTo: adminReplyToId,
+                            attachment: data.attachment
+                        });
+                        input.value = '';
+                        adminCancelReply();
+                        clearTimeout(adminTypingTimeout);
+                        adminSocket.emit('stop_typing', { receiverId: adminChatTargetId });
+                    })
+                    .catch(() => {
+                        uploadIndicator.classList.remove('active');
+                        Toast.error('File upload failed');
+                    });
+            } else {
+                adminSocket.emit('send_message', {
+                    receiverId: adminChatTargetId,
+                    text,
+                    replyTo: adminReplyToId
+                });
+                input.value = '';
+                adminCancelReply();
+                clearTimeout(adminTypingTimeout);
+                adminSocket.emit('stop_typing', { receiverId: adminChatTargetId });
+            }
+        }
+
+        // Hook chat into navigate
+        const _origAdminNavigate = navigate;
+        navigate = function (section, pushState = true) {
+            const oldSection = document.querySelector('.section.active')?.id?.replace('section-', '');
+            _origAdminNavigate(section, pushState);
+            if (section === 'chat') {
+                initAdminSocket();
+                loadAdminChatUsers();
+                if (adminSocket) adminSocket.emit('chat_active');
+            } else if (oldSection === 'chat') {
+                if (adminSocket) adminSocket.emit('chat_inactive');
+            }
+        };
+
+        // Initial load
+        window.addEventListener('load', () => {
+            initAdminSocket();
+            loadStats();
+        });
+
+        // ── Sidebar Toggle (Hamburger) ────────────────────────────
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-open');
+        }
+
+        // Close sidebar when any nav-item is clicked (mobile)
+        document.querySelectorAll('.sidebar .nav-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                if (window.innerWidth <= 1024) {
+                    document.body.classList.remove('sidebar-open');
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
