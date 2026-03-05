@@ -695,10 +695,14 @@ body.on-home .back-btn {
   z-index: 99;
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
+  /* ← FIX: don't block clicks when invisible */
 }
 
 .sidebar-open .sidebar-overlay {
   opacity: 1;
+  pointer-events: auto;
+  /* ← only capture clicks when sidebar IS open */
 }
 
 /* Sidebar slide-in on mobile */
@@ -719,6 +723,8 @@ body.on-home .back-btn {
 
   .sidebar-overlay {
     display: block;
+    pointer-events: none;
+    /* still controlled by .sidebar-open rule */
   }
 
   .main-content {
@@ -747,6 +753,8 @@ body.on-home .back-btn {
 
   .sidebar-overlay {
     display: block;
+    pointer-events: none;
+    /* still controlled by .sidebar-open rule */
   }
 
   .main-content {
