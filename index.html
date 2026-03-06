@@ -307,107 +307,107 @@
       } finally {
         setLoading('login-btn', false);
       }
+    }
 
+    async function handleRegister() {
+      clearAlert();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
 
-      async function handleRegister() {
-        clearAlert();
-        const name = document.getElementById('reg-name').value.trim();
-        const email = document.getElementById('reg-email').value.trim();
-        const password = document.getElementById('reg-password').value;
+      if (!name || !email || !password) return showAlert('⚠️ All fields are required.', 'warning');
+      if (password.length < 6) return showAlert('⚠️ Password must be at least 6 characters.', 'warning');
 
-        if (!name || !email || !password) return showAlert('⚠️ All fields are required.', 'warning');
-        if (password.length < 6) return showAlert('⚠️ Password must be at least 6 characters.', 'warning');
+      setLoading('register-btn', true);
+      try {
+        const data = await apiRequest('/auth/register/user', 'POST', { name, email, password });
+        showAlert('✅ ' + data.message, 'success');
+        document.getElementById('reg-name').value = '';
+        document.getElementById('reg-email').value = '';
+        document.getElementById('reg-password').value = '';
+      } catch (err) {
+        showAlert('❌ ' + (err.message || 'Registration failed.'), 'error');
+      } finally {
+        setLoading('register-btn', false);
+      }
+    }
 
-        setLoading('register-btn', true);
-        try {
-          const data = await apiRequest('/auth/register/user', 'POST', { name, email, password });
-          showAlert('✅ ' + data.message, 'success');
-          document.getElementById('reg-name').value = '';
-          document.getElementById('reg-email').value = '';
-          document.getElementById('reg-password').value = '';
-        } catch (err) {
-          showAlert('❌ ' + (err.message || 'Registration failed.'), 'error');
-        } finally {
-          setLoading('register-btn', false);
+    async function handleForgotPassword() {
+      clearAlert();
+      const email = document.getElementById('forgot-email').value.trim();
+      if (!email) return showAlert('⚠️ Email is required.', 'warning');
+
+      setLoading('forgot-btn', true);
+      try {
+        const data = await apiRequest('/auth/forgot-password', 'POST', { email });
+        window.tempResetEmail = email;
+
+        if (data.otpFallback) {
+          // Email failed — show OTP directly on screen
+          showAlert(
+            `⚠️ ${data.message}<br><br>` +
+            `<strong style="color:#a5b4fc;">Your OTP Code:</strong><br>` +
+            `<span style="font-size:2rem;font-weight:700;letter-spacing:6px;color:#fbbf24;">${data.otpFallback}</span><br>` +
+            `<small style="color:#94a3b8;">Copy this code and use it below. Valid for 10 minutes.</small>`,
+            'info'
+          );
+        } else {
+          showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
         }
+
+        setTimeout(() => switchTab('reset'), 3000);
+      } catch (err) {
+        showAlert('❌ ' + (err.message || 'Failed to send OTP.'), 'error');
+      } finally {
+        setLoading('forgot-btn', false);
       }
 
-      async function handleForgotPassword() {
-        clearAlert();
-        const email = document.getElementById('forgot-email').value.trim();
-        if (!email) return showAlert('⚠️ Email is required.', 'warning');
+    }
 
-        setLoading('forgot-btn', true);
-        try {
-          const data = await apiRequest('/auth/forgot-password', 'POST', { email });
-          window.tempResetEmail = email;
+    async function handleResetPassword() {
+      clearAlert();
+      const otp = document.getElementById('reset-otp').value.trim();
+      const newPassword = document.getElementById('reset-password').value;
+      const email = window.tempResetEmail;
 
-          if (data.otpFallback) {
-            // Email failed — show OTP directly on screen
-            showAlert(
-              `⚠️ ${data.message}<br><br>` +
-              `<strong style="color:#a5b4fc;">Your OTP Code:</strong><br>` +
-              `<span style="font-size:2rem;font-weight:700;letter-spacing:6px;color:#fbbf24;">${data.otpFallback}</span><br>` +
-              `<small style="color:#94a3b8;">Copy this code and use it below. Valid for 10 minutes.</small>`,
-              'info'
-            );
-          } else {
-            showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
-          }
+      if (!otp || !newPassword) return showAlert('⚠️ Please fill in all fields.', 'warning');
+      if (newPassword.length < 6) return showAlert('⚠️ New password must be at least 6 characters.', 'warning');
 
-          setTimeout(() => switchTab('reset'), 3000);
-        } catch (err) {
-          showAlert('❌ ' + (err.message || 'Failed to send OTP.'), 'error');
-        } finally {
-          setLoading('forgot-btn', false);
-        }
-
+      setLoading('reset-btn', true);
+      try {
+        await apiRequest('/auth/reset-password', 'POST', { email, otp, newPassword });
+        showAlert('✅ Password reset successful!', 'success');
+        setTimeout(() => switchTab('login'), 2000);
+      } catch (err) {
+        showAlert('❌ ' + (err.message || 'Reset failed. Invalid OTP.'), 'error');
+      } finally {
+        setLoading('reset-btn', false);
       }
+    }
 
-      async function handleResetPassword() {
-        clearAlert();
-        const otp = document.getElementById('reset-otp').value.trim();
-        const newPassword = document.getElementById('reset-password').value;
-        const email = window.tempResetEmail;
 
-        if (!otp || !newPassword) return showAlert('⚠️ Please fill in all fields.', 'warning');
-        if (newPassword.length < 6) return showAlert('⚠️ New password must be at least 6 characters.', 'warning');
-
-        setLoading('reset-btn', true);
-        try {
-          await apiRequest('/auth/reset-password', 'POST', { email, otp, newPassword });
-          showAlert('✅ Password reset successful!', 'success');
-          setTimeout(() => switchTab('login'), 2000);
-        } catch (err) {
-          showAlert('❌ ' + (err.message || 'Reset failed. Invalid OTP.'), 'error');
-        } finally {
-          setLoading('reset-btn', false);
-        }
+    // Enter key support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const activeForm = document.querySelector('[id^="form-"]:not([style*="none"])');
+        if (activeForm && activeForm.id === 'form-login') handleLogin();
+        if (activeForm && activeForm.id === 'form-register') handleRegister();
+        if (activeForm && activeForm.id === 'form-forgot') handleForgotPassword();
+        if (activeForm && activeForm.id === 'form-reset') handleResetPassword();
+        if (activeForm && activeForm.id === 'form-admin-pin') handlePinVerify();
       }
+    });
 
-
-      // Enter key support
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const activeForm = document.querySelector('[id^="form-"]:not([style*="none"])');
-          if (activeForm && activeForm.id === 'form-login') handleLogin();
-          if (activeForm && activeForm.id === 'form-register') handleRegister();
-          if (activeForm && activeForm.id === 'form-forgot') handleForgotPassword();
-          if (activeForm && activeForm.id === 'form-reset') handleResetPassword();
-          if (activeForm && activeForm.id === 'form-admin-pin') handlePinVerify();
-        }
-      });
-
-      // Add shake animation
-      const style = document.createElement('style');
-      style.innerHTML = `
+    // Add shake animation
+    const style = document.createElement('style');
+    style.innerHTML = `
       @keyframes shake {
         0%, 100% { transform: translateX(0); }
         10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
         20%, 40%, 60%, 80% { transform: translateX(5px); }
       }
     `;
-      document.head.appendChild(style);
+    document.head.appendChild(style);
   </script>
 </body>
 
