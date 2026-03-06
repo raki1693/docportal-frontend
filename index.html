@@ -323,14 +323,27 @@
         if (err.code === 'CODE_REQUIRED') {
           window.tempLoginEmail = email;
           window.tempLoginPassword = password;
-          showAlert('🎫 ' + err.message, 'info');
-          setTimeout(() => switchTab('verify-access'), 1000);
+
+          // If email failed and server sent the code directly, show it on screen
+          if (err.accessCodeFallback) {
+            showAlert(
+              `🎫 ${err.message}<br><br>` +
+              `<strong style="color:#a5b4fc;">Your Access Code:</strong> ` +
+              `<span style="font-size:1.4rem;font-weight:700;letter-spacing:4px;color:#fbbf24;">${err.accessCodeFallback}</span><br>` +
+              `<small style="color:#94a3b8;">Copy this code before proceeding.</small>`,
+              'info'
+            );
+          } else {
+            showAlert('🎫 ' + err.message, 'info');
+          }
+          setTimeout(() => switchTab('verify-access'), 2500);
           return;
         }
         showAlert('❌ ' + (err.message || 'Login failed. Check your credentials.'), 'error');
       } finally {
         setLoading('login-btn', false);
       }
+
     }
 
     async function handleRegister() {
