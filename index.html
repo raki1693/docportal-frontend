@@ -111,24 +111,7 @@
         </button>
       </div>
 
-      <!-- Access Code Verification (First Time Only) -->
-      <div id="form-verify-access" style="display:none;">
-        <h2 style="margin-bottom:1rem; font-size:1.4rem; color:var(--text-primary);">Verify Access</h2>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:1.5rem;">
-          Admin has granted you access! Enter the 6-digit access code sent to your email to activate your account.
-        </p>
-        <div class="form-group">
-          <label for="access-code">Access Code</label>
-          <input type="text" id="access-code" class="form-input" placeholder="123456" maxlength="6" />
-        </div>
-        <button class="btn btn-primary" id="verify-access-btn" onclick="handleVerifyAccessCode()">
-          ✅ Verify & Login
-        </button>
-        <p style="text-align:center; margin-top:1.25rem; font-size:0.875rem;">
-          <a href="#" onclick="switchTab('login')" style="color:var(--text-muted); text-decoration:none;">Back to
-            Login</a>
-        </p>
-      </div>
+
 
       <!-- Admin PIN Verification -->
       <div id="form-admin-pin" style="display:none;">
@@ -320,155 +303,111 @@
           window.location.href = 'pages/user.html';
         }, 500);
       } catch (err) {
-        if (err.code === 'CODE_REQUIRED') {
-          window.tempLoginEmail = email;
-          window.tempLoginPassword = password;
-
-          // If email failed and server sent the code directly, show it on screen
-          if (err.accessCodeFallback) {
-            showAlert(
-              `🎫 ${err.message}<br><br>` +
-              `<strong style="color:#a5b4fc;">Your Access Code:</strong> ` +
-              `<span style="font-size:1.4rem;font-weight:700;letter-spacing:4px;color:#fbbf24;">${err.accessCodeFallback}</span><br>` +
-              `<small style="color:#94a3b8;">Copy this code before proceeding.</small>`,
-              'info'
-            );
-          } else {
-            showAlert('🎫 ' + err.message, 'info');
-          }
-          setTimeout(() => switchTab('verify-access'), 2500);
-          return;
-        }
         showAlert('❌ ' + (err.message || 'Login failed. Check your credentials.'), 'error');
       } finally {
         setLoading('login-btn', false);
       }
 
-    }
 
-    async function handleRegister() {
-      clearAlert();
-      const name = document.getElementById('reg-name').value.trim();
-      const email = document.getElementById('reg-email').value.trim();
-      const password = document.getElementById('reg-password').value;
+      async function handleRegister() {
+        clearAlert();
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
 
-      if (!name || !email || !password) return showAlert('⚠️ All fields are required.', 'warning');
-      if (password.length < 6) return showAlert('⚠️ Password must be at least 6 characters.', 'warning');
+        if (!name || !email || !password) return showAlert('⚠️ All fields are required.', 'warning');
+        if (password.length < 6) return showAlert('⚠️ Password must be at least 6 characters.', 'warning');
 
-      setLoading('register-btn', true);
-      try {
-        const data = await apiRequest('/auth/register/user', 'POST', { name, email, password });
-        showAlert('✅ ' + data.message, 'success');
-        document.getElementById('reg-name').value = '';
-        document.getElementById('reg-email').value = '';
-        document.getElementById('reg-password').value = '';
-      } catch (err) {
-        showAlert('❌ ' + (err.message || 'Registration failed.'), 'error');
-      } finally {
-        setLoading('register-btn', false);
+        setLoading('register-btn', true);
+        try {
+          const data = await apiRequest('/auth/register/user', 'POST', { name, email, password });
+          showAlert('✅ ' + data.message, 'success');
+          document.getElementById('reg-name').value = '';
+          document.getElementById('reg-email').value = '';
+          document.getElementById('reg-password').value = '';
+        } catch (err) {
+          showAlert('❌ ' + (err.message || 'Registration failed.'), 'error');
+        } finally {
+          setLoading('register-btn', false);
+        }
       }
-    }
 
-    async function handleForgotPassword() {
-      clearAlert();
-      const email = document.getElementById('forgot-email').value.trim();
-      if (!email) return showAlert('⚠️ Email is required.', 'warning');
+      async function handleForgotPassword() {
+        clearAlert();
+        const email = document.getElementById('forgot-email').value.trim();
+        if (!email) return showAlert('⚠️ Email is required.', 'warning');
 
-      setLoading('forgot-btn', true);
-      try {
-        const data = await apiRequest('/auth/forgot-password', 'POST', { email });
-        window.tempResetEmail = email;
+        setLoading('forgot-btn', true);
+        try {
+          const data = await apiRequest('/auth/forgot-password', 'POST', { email });
+          window.tempResetEmail = email;
 
-        if (data.otpFallback) {
-          // Email failed — show OTP directly on screen
-          showAlert(
-            `⚠️ ${data.message}<br><br>` +
-            `<strong style="color:#a5b4fc;">Your OTP Code:</strong><br>` +
-            `<span style="font-size:2rem;font-weight:700;letter-spacing:6px;color:#fbbf24;">${data.otpFallback}</span><br>` +
-            `<small style="color:#94a3b8;">Copy this code and use it below. Valid for 10 minutes.</small>`,
-            'info'
-          );
-        } else {
-          showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
+          if (data.otpFallback) {
+            // Email failed — show OTP directly on screen
+            showAlert(
+              `⚠️ ${data.message}<br><br>` +
+              `<strong style="color:#a5b4fc;">Your OTP Code:</strong><br>` +
+              `<span style="font-size:2rem;font-weight:700;letter-spacing:6px;color:#fbbf24;">${data.otpFallback}</span><br>` +
+              `<small style="color:#94a3b8;">Copy this code and use it below. Valid for 10 minutes.</small>`,
+              'info'
+            );
+          } else {
+            showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
+          }
+
+          setTimeout(() => switchTab('reset'), 3000);
+        } catch (err) {
+          showAlert('❌ ' + (err.message || 'Failed to send OTP.'), 'error');
+        } finally {
+          setLoading('forgot-btn', false);
         }
 
-        setTimeout(() => switchTab('reset'), 3000);
-      } catch (err) {
-        showAlert('❌ ' + (err.message || 'Failed to send OTP.'), 'error');
-      } finally {
-        setLoading('forgot-btn', false);
       }
 
-    }
+      async function handleResetPassword() {
+        clearAlert();
+        const otp = document.getElementById('reset-otp').value.trim();
+        const newPassword = document.getElementById('reset-password').value;
+        const email = window.tempResetEmail;
 
-    async function handleResetPassword() {
-      clearAlert();
-      const otp = document.getElementById('reset-otp').value.trim();
-      const newPassword = document.getElementById('reset-password').value;
-      const email = window.tempResetEmail;
+        if (!otp || !newPassword) return showAlert('⚠️ Please fill in all fields.', 'warning');
+        if (newPassword.length < 6) return showAlert('⚠️ New password must be at least 6 characters.', 'warning');
 
-      if (!otp || !newPassword) return showAlert('⚠️ Please fill in all fields.', 'warning');
-      if (newPassword.length < 6) return showAlert('⚠️ New password must be at least 6 characters.', 'warning');
-
-      setLoading('reset-btn', true);
-      try {
-        await apiRequest('/auth/reset-password', 'POST', { email, otp, newPassword });
-        showAlert('✅ Password reset successful!', 'success');
-        setTimeout(() => switchTab('login'), 2000);
-      } catch (err) {
-        showAlert('❌ ' + (err.message || 'Reset failed. Invalid OTP.'), 'error');
-      } finally {
-        setLoading('reset-btn', false);
+        setLoading('reset-btn', true);
+        try {
+          await apiRequest('/auth/reset-password', 'POST', { email, otp, newPassword });
+          showAlert('✅ Password reset successful!', 'success');
+          setTimeout(() => switchTab('login'), 2000);
+        } catch (err) {
+          showAlert('❌ ' + (err.message || 'Reset failed. Invalid OTP.'), 'error');
+        } finally {
+          setLoading('reset-btn', false);
+        }
       }
-    }
 
-    async function handleVerifyAccessCode() {
-      clearAlert();
-      const code = document.getElementById('access-code').value.trim();
-      const email = window.tempLoginEmail;
-      const password = window.tempLoginPassword;
 
-      if (!code) return showAlert('⚠️ Please enter the access code.', 'warning');
+      // Enter key support
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const activeForm = document.querySelector('[id^="form-"]:not([style*="none"])');
+          if (activeForm && activeForm.id === 'form-login') handleLogin();
+          if (activeForm && activeForm.id === 'form-register') handleRegister();
+          if (activeForm && activeForm.id === 'form-forgot') handleForgotPassword();
+          if (activeForm && activeForm.id === 'form-reset') handleResetPassword();
+          if (activeForm && activeForm.id === 'form-admin-pin') handlePinVerify();
+        }
+      });
 
-      setLoading('verify-access-btn', true);
-      try {
-        const data = await apiRequest('/auth/verify-access-code', 'POST', { email, password, code });
-        Auth.setToken(data.token);
-        Auth.setUser(data.user);
-        Toast.success('Verification successful! Welcome.');
-        setTimeout(() => {
-          window.location.href = 'pages/user.html';
-        }, 800);
-      } catch (err) {
-        showAlert('❌ ' + (err.message || 'Verification failed. Invalid code.'), 'error');
-      } finally {
-        setLoading('verify-access-btn', false);
-      }
-    }
-
-    // Enter key support
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const activeForm = document.querySelector('[id^="form-"]:not([style*="none"])');
-        if (activeForm && activeForm.id === 'form-login') handleLogin();
-        if (activeForm && activeForm.id === 'form-register') handleRegister();
-        if (activeForm && activeForm.id === 'form-forgot') handleForgotPassword();
-        if (activeForm && activeForm.id === 'form-reset') handleResetPassword();
-        if (activeForm && activeForm.id === 'form-verify-access') handleVerifyAccessCode();
-        if (activeForm && activeForm.id === 'form-admin-pin') handlePinVerify();
-      }
-    });
-
-    // Add shake animation
-    const style = document.createElement('style');
-    style.innerHTML = `
+      // Add shake animation
+      const style = document.createElement('style');
+      style.innerHTML = `
       @keyframes shake {
         0%, 100% { transform: translateX(0); }
         10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
         20%, 40%, 60%, 80% { transform: translateX(5px); }
       }
     `;
-    document.head.appendChild(style);
+      document.head.appendChild(style);
   </script>
 </body>
 
