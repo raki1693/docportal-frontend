@@ -7,6 +7,13 @@
   <title>DocPortal — Login</title>
   <meta name="description" content="DocPortal - Secure document sharing platform with role-based access control." />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DocPortal" />
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png" />
 </head>
 
 <body>
@@ -155,6 +162,7 @@
   </div>
 
   <script src="js/utils.js"></script>
+  <script src="js/anti-capture.js"></script>
   <script>
     // State management
     let pinAttempts = 5;
@@ -343,19 +351,23 @@
         window.tempResetEmail = email;
 
         if (data.otpFallback) {
-          // Email failed — show OTP directly on screen
+          // Email failed — show OTP directly on screen in a styled box
           showAlert(
-            `⚠️ ${data.message}<br><br>` +
-            `<strong style="color:#a5b4fc;">Your OTP Code:</strong><br>` +
-            `<span style="font-size:2rem;font-weight:700;letter-spacing:6px;color:#fbbf24;">${data.otpFallback}</span><br>` +
-            `<small style="color:#94a3b8;">Copy this code and use it below. Valid for 10 minutes.</small>`,
+            `<div style="text-align:center; padding: 0.5rem 0;">
+              <div style="font-size:0.9rem; color:#94a3b8; margin-bottom:0.75rem;">⚠️ Email delivery failed. Use this code to reset your password:</div>
+              <div style="background:rgba(251,191,36,0.1); border:2px solid #fbbf24; border-radius:12px; padding:1rem 1.5rem; margin:0.5rem 0; display:inline-block;">
+                <div style="font-size:0.75rem; color:#a5b4fc; margin-bottom:0.4rem; letter-spacing:1px;">YOUR OTP CODE</div>
+                <div style="font-size:2.2rem; font-weight:800; letter-spacing:10px; color:#fbbf24; font-family:monospace;">${data.otpFallback}</div>
+              </div>
+              <div style="font-size:0.75rem; color:#64748b; margin-top:0.6rem;">Valid for 10 minutes. Copy it before proceeding.</div>
+            </div>`,
             'info'
           );
         } else {
           showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
         }
 
-        setTimeout(() => switchTab('reset'), 3000);
+        setTimeout(() => switchTab('reset'), 5000);
       } catch (err) {
         showAlert('❌ ' + (err.message || 'Failed to send OTP.'), 'error');
       } finally {
