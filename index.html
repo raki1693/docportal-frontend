@@ -376,15 +376,29 @@
 
       setLoading('forgot-btn', true);
       try {
-        await apiRequest('/auth/forgot-password', 'POST', { email });
+        const data = await apiRequest('/auth/forgot-password', 'POST', { email });
         window.tempResetEmail = email;
-        showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
-        setTimeout(() => switchTab('reset'), 1500);
+
+        if (data.otpFallback) {
+          // Email failed — show OTP directly on screen
+          showAlert(
+            `⚠️ ${data.message}<br><br>` +
+            `<strong style="color:#a5b4fc;">Your OTP Code:</strong><br>` +
+            `<span style="font-size:2rem;font-weight:700;letter-spacing:6px;color:#fbbf24;">${data.otpFallback}</span><br>` +
+            `<small style="color:#94a3b8;">Copy this code and use it below. Valid for 10 minutes.</small>`,
+            'info'
+          );
+        } else {
+          showAlert('✅ OTP sent to your email. Check your inbox.', 'success');
+        }
+
+        setTimeout(() => switchTab('reset'), 3000);
       } catch (err) {
         showAlert('❌ ' + (err.message || 'Failed to send OTP.'), 'error');
       } finally {
         setLoading('forgot-btn', false);
       }
+
     }
 
     async function handleResetPassword() {
